@@ -1,10 +1,12 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useCivicStore } from '../../stores/civicStore';
 import { 
   LayoutDashboard, Database, ClipboardList, 
   Settings, Users, BarChart3, AlertTriangle, Coins
 } from 'lucide-react';
+
 
 interface SidebarProps {
   currentTab: string;
@@ -99,8 +101,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
         })}
       </div>
       
-      <div className="p-4 border-t border-slate-800 text-[10px] text-slate-500 font-mono text-center">
-        Dang District, Nepal v1.0.0
+      <div className="p-4 border-t border-slate-800 space-y-2">
+        <div className="flex justify-around text-[10px] text-blue-400">
+          <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
+          <span className="text-slate-700">•</span>
+          <Link to="/contact" className="hover:underline">Contact Support</Link>
+        </div>
+        <button
+          onClick={async () => {
+            const { default: authService } = await import('../../services/authService');
+            await authService.signOut();
+            window.location.href = '/login';
+          }}
+          className="w-full text-center py-2 bg-red-950/20 hover:bg-red-950/40 border border-red-900/30 hover:border-red-900/50 text-red-400 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+        >
+          Sign Out
+        </button>
+        <div className="text-[9px] text-slate-600 font-mono text-center">
+          Dang District, Nepal v1.0.0
+        </div>
       </div>
     </aside>
   );

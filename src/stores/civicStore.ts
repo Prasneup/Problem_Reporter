@@ -18,12 +18,15 @@ interface CivicState {
   // Actions
   setLanguage: (lang: 'en' | 'ne') => void;
   setUserRole: (role: UserRole) => void;
+  setCurrentUser: (user: UserProfile) => void;
   setOnlineStatus: (status: boolean) => void;
+  loadInitialData: () => Promise<void>;
+  signOut: () => Promise<void>;
   
-  submitReport: (report: Omit<Report, 'id' | 'reporterId' | 'status' | 'priority' | 'supportCount' | 'duplicateCount' | 'createdAt' | 'updatedAt' | 'images'> & { imageUrl?: string }) => void;
-  supportReport: (reportId: string) => void;
-  addComment: (reportId: string, content: string) => void;
-  updateReportStatus: (reportId: string, status: Report['status'], notes?: string) => void;
+  submitReport: (report: Omit<Report, 'id' | 'reporterId' | 'status' | 'priority' | 'supportCount' | 'duplicateCount' | 'createdAt' | 'updatedAt' | 'images'> & { imageUrl?: string }) => Promise<void>;
+  supportReport: (reportId: string) => Promise<void>;
+  addComment: (reportId: string, content: string) => Promise<void>;
+  updateReportStatus: (reportId: string, status: Report['status'], notes?: string) => Promise<void>;
   
   assignInspector: (reportId: string, inspectorId: string, inspectorName: string, notes?: string) => void;
   completeAssignment: (reportId: string, afterImageUrl: string, notes?: string) => void;
@@ -56,12 +59,40 @@ export const useCivicStore = create<CivicState>()(
       isOnline: true,
 
       setLanguage: (language) => set({ language }),
+      setCurrentUser: (currentUser) => set({ currentUser }),
       
       setUserRole: (role) => {
         const profileKey = Object.keys(MOCK_PROFILES).find(
           (key) => MOCK_PROFILES[key].role === role
         ) || 'citizen';
         set({ currentUser: MOCK_PROFILES[profileKey] });
+      },
+
+      signOut: async () => {
+        try {
+          const { default: authService } = await import('../services/authService');
+          await authService.signOut();
+        } catch (err) {
+          console.error('Sign out error:', err);
+        }
+        set({ currentUser: MOCK_PROFILES.citizen });
+      },
+
+      loadInitialData: async () => {
+        if (!get().isOnline) return;
+        try {
+          const { default: reportService } = await import('../services/reportService');
+          const reports = await reportService.fetchReports();
+          const budgets = await reportService.fetchBudgets();
+          if (reports && reports.length > 0) {
+            set({ reports });
+          }
+          if (budgets && budgets.length > 0) {
+            set({ budgets });
+          }
+        } catch (err) {
+          console.error('Error loading initial data from Supabase:', err);
+        }
       },
 
       setOnlineStatus: (isOnline) => {
@@ -71,29 +102,71 @@ export const useCivicStore = create<CivicState>()(
         }
       },
 
-      submitReport: (newReport) => {
+      submitReport: async (newReport) => {
         const id = 'r-' + Math.random().toString(36).substring(2, 11);
         const now = new Date().toISOString();
         const user = get().currentUser;
         
-        const imgUrl = newReport.imageUrl || 'https://images.unsplash.com/photo-1594913785162-e6785b4938a2?w=800&auto=format&fit=crop&q=60';
+        let imgUrl = newReport.imageUrl || '';
         const isEmergency = newReport.isEmergency || newReport.category === 'Emergency';
         const initialStatus = isEmergency ? 'Under_Review' : 'Submitted';
-        const detectedIssues = [newReport.category.toLowerCase().replace(' ', '_')];
+        const priority = calculatePriority(newReport.category, 0, isEmergency);
         
+        if (get().isOnline) {
+          try {
+            if (imgUrl && imgUrl.startsWith('data:')) {
+              const { default: storageService } = await import('../services/storageService');
+              imgUrl = await storageService.uploadReportImage(imgUrl);
+            }
+            const { default: reportService } = await import('../services/reportService');
+            const submitted = await reportService.submitReport({
+              ...newReport,
+              imageUrl: imgUrl || undefined,
+              reporterId: user.id,
+              priority,
+              status: initialStatus
+            });
+            
+            const pointsAwarded = isEmergency ? 25 : 10;
+            set((state) => ({
+              reports: [submitted, ...state.reports],
+              currentUser: {
+                ...state.currentUser,
+                reputationPoints: state.currentUser.reputationPoints + pointsAwarded
+              },
+              notifications: [
+                {
+                  id: 'n-' + Math.random().toString(36).substring(2, 11),
+                  userId: user.id,
+                  title: 'Report Submitted Successfully',
+                  message: `Your report "${newReport.title}" has been registered. You earned ${pointsAwarded} Reputation Points!`,
+                  type: 'success',
+                  isRead: false,
+                  createdAt: now
+                },
+                ...state.notifications
+              ]
+            }));
+            return;
+          } catch (err) {
+            console.error('Error submitting report to Supabase:', err);
+          }
+        }
+
+        const detectedIssues = [newReport.category.toLowerCase().replace(' ', '_')];
         const reportObj: Report = {
           ...newReport,
           id,
           reporterId: user.id,
           status: initialStatus,
-          priority: calculatePriority(newReport.category, 0, isEmergency),
+          priority,
           supportCount: 0,
           duplicateCount: 0,
           budgetEstimated: isEmergency ? 150000 : 35000,
           budgetSpent: 0,
           createdAt: now,
           updatedAt: now,
-          images: [{
+          images: imgUrl ? [{
             id: 'img-' + Math.random().toString(36).substring(2, 11),
             reportId: id,
             url: imgUrl,
@@ -107,62 +180,48 @@ export const useCivicStore = create<CivicState>()(
               isBlurry: false
             },
             createdAt: now
-          }]
+          }] : []
         };
 
-        if (!get().isOnline) {
-          set((state) => ({
-            offlineQueue: [...state.offlineQueue, reportObj],
-            notifications: [
-              {
-                id: 'n-offline-' + Date.now(),
-                userId: user.id,
-                title: 'Offline Report Queued',
-                message: 'No internet connection detected. Your report has been saved locally and will sync once connection returns.',
-                type: 'warning',
-                isRead: false,
-                createdAt: now
-              },
-              ...state.notifications
-            ]
-          }));
-          return;
+        set((state) => ({
+          offlineQueue: [...state.offlineQueue, reportObj],
+          notifications: [
+            {
+              id: 'n-offline-' + Date.now(),
+              userId: user.id,
+              title: 'Offline Report Queued',
+              message: 'No internet connection detected. Your report has been saved locally and will sync once connection returns.',
+              type: 'warning',
+              isRead: false,
+              createdAt: now
+            },
+            ...state.notifications
+          ]
+        }));
+      },
+
+      supportReport: async (reportId) => {
+        const user = get().currentUser;
+        const target = get().reports.find(r => r.id === reportId);
+        if (!target) return;
+
+        const nextSupports = target.supportCount + 1;
+        const nextPriority = (nextSupports > 25 && target.priority !== 'Emergency')
+          ? 'Critical'
+          : calculatePriority(target.category, nextSupports, target.isEmergency);
+
+        if (get().isOnline) {
+          try {
+            const { default: reportService } = await import('../services/reportService');
+            await reportService.supportReport(reportId, user.id, nextSupports, nextPriority);
+          } catch (err) {
+            console.error('Error voting support in DB:', err);
+          }
         }
 
         set((state) => {
-          const pointsAwarded = isEmergency ? 25 : 10;
-          const updatedUser = {
-            ...state.currentUser,
-            reputationPoints: state.currentUser.reputationPoints + pointsAwarded
-          };
-
-          const newNotification: Notification = {
-            id: 'n-' + Math.random().toString(36).substring(2, 11),
-            userId: user.id,
-            title: 'Report Submitted Successfully',
-            message: `Your report "${newReport.title}" has been registered. You earned ${pointsAwarded} Reputation Points!`,
-            type: 'success',
-            isRead: false,
-            createdAt: now
-          };
-
-          return {
-            reports: [reportObj, ...state.reports],
-            currentUser: updatedUser,
-            notifications: [newNotification, ...state.notifications]
-          };
-        });
-      },
-
-      supportReport: (reportId) => {
-        set((state) => {
-          const now = new Date().toISOString();
           const reports = state.reports.map((r) => {
             if (r.id === reportId) {
-              const nextSupports = r.supportCount + 1;
-              const nextPriority = (nextSupports > 25 && r.priority !== 'Emergency')
-                ? 'Critical'
-                : calculatePriority(r.category, nextSupports, r.isEmergency);
               const nextStatus = (nextSupports > 25 && r.priority !== 'Emergency')
                 ? 'Under_Review'
                 : r.status;
@@ -172,7 +231,7 @@ export const useCivicStore = create<CivicState>()(
                 supportCount: nextSupports,
                 priority: nextPriority,
                 status: nextStatus,
-                updatedAt: now
+                updatedAt: new Date().toISOString()
               };
             }
             return r;
@@ -187,8 +246,21 @@ export const useCivicStore = create<CivicState>()(
         });
       },
 
-      addComment: (reportId, content) => {
+      addComment: async (reportId, content) => {
         const user = get().currentUser;
+        if (get().isOnline) {
+          try {
+            const { default: reportService } = await import('../services/reportService');
+            const commentObj = await reportService.addComment(reportId, user.id, content);
+            set((state) => ({
+              comments: [...state.comments, commentObj]
+            }));
+            return;
+          } catch (err) {
+            console.error('Error saving comment in DB:', err);
+          }
+        }
+
         const commentObj: Comment = {
           id: 'c-' + Math.random().toString(36).substring(2, 11),
           reportId,
@@ -205,7 +277,17 @@ export const useCivicStore = create<CivicState>()(
         }));
       },
 
-      updateReportStatus: (reportId, status, notes) => {
+      updateReportStatus: async (reportId, status, notes) => {
+        const user = get().currentUser;
+        if (get().isOnline) {
+          try {
+            const { default: reportService } = await import('../services/reportService');
+            await reportService.updateReportStatus(reportId, status, notes, user.id);
+          } catch (err) {
+            console.error('Error updating status in DB:', err);
+          }
+        }
+
         set((state) => {
           const now = new Date().toISOString();
           const reports = state.reports.map((r) => {

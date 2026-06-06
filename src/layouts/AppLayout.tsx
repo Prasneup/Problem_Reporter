@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 import DevPanel from '../components/common/DevPanel';
@@ -17,6 +19,17 @@ import OpenDataPortal from '../features/transparency/OpenDataPortal';
 export const AppLayout: React.FC = () => {
   const { currentUser } = useCivicStore();
   const role = currentUser.role;
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/login');
+      }
+    };
+    checkAuth();
+  }, [currentUser, navigate]);
 
   const getInitialTab = (userRole: string) => {
     switch (userRole) {
