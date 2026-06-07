@@ -3,8 +3,8 @@ import type { UserProfile, Report, Comment, WardBudget } from '../types';
 export const MOCK_PROFILES: Record<string, UserProfile> = {
   citizen: {
     id: 'p-citizen',
-    name: 'Ram Bahadur Thapa',
-    email: 'ram@dang.gov.np',
+    name: 'Yogesh Pulami',
+    email: 'yogi@dang.gov.np',
     phone: '9847800000',
     role: 'Citizen',
     reputationPoints: 120,
@@ -13,8 +13,8 @@ export const MOCK_PROFILES: Record<string, UserProfile> = {
   },
   verifier: {
     id: 'p-verifier',
-    name: 'Sita Kumari Chaudhary',
-    email: 'sita@dang.gov.np',
+    name: 'Rajan Kumar Sha',
+    email: 'rajju@dang.gov.np',
     phone: '9857800001',
     role: 'Community Verifier',
     municipalityId: 'ghorahi',
@@ -25,8 +25,8 @@ export const MOCK_PROFILES: Record<string, UserProfile> = {
   },
   inspector: {
     id: 'p-inspector',
-    name: 'Hari Prasad Devkota',
-    email: 'hari@dang.gov.np',
+    name: 'Prasanna Neupane',
+    email: 'pappu@dang.gov.np',
     phone: '9867800002',
     role: 'Field Inspector',
     municipalityId: 'ghorahi',
