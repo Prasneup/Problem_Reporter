@@ -6,11 +6,11 @@ import { Landmark, TrendingUp, BarChart3, Receipt } from 'lucide-react';
 
 export const MunicipalityPortal: React.FC<{ activeView: string }> = ({ activeView }) => {
   const { reports, budgets, currentUser } = useCivicStore();
-  
+
   const muniId = currentUser.municipalityId || 'ghorahi';
   const muniBudgets = budgets.filter(b => b.municipalityId === muniId);
   const muniReports = reports.filter(r => r.municipalityId === muniId);
-  
+
   const totalAllocated = muniBudgets.reduce((acc, b) => acc + b.allocated, 0);
   const totalSpent = muniBudgets.reduce((acc, b) => acc + b.spent, 0);
 

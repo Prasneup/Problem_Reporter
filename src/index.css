@@ -8,7 +8,7 @@
 @layer base {
   body {
     @apply bg-slate-950 text-slate-100 font-sans antialiased overflow-x-hidden;
-    background-image: 
+    background-image:
       radial-gradient(at 0% 0%, rgba(15, 23, 42, 0.5) 0px, transparent 50%),
       radial-gradient(at 50% 0%, rgba(30, 41, 59, 0.3) 0px, transparent 50%);
   }
@@ -18,9 +18,11 @@
     width: 6px;
     height: 6px;
   }
+
   ::-webkit-scrollbar-track {
     @apply bg-slate-950;
   }
+
   ::-webkit-scrollbar-thumb {
     @apply bg-slate-800 rounded hover:bg-slate-700 transition-colors;
   }
@@ -45,7 +47,8 @@
   filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
 
-.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
   background: #0f172a !important;
   color: #f8fafc !important;
   border: 1px solid #1e293b;
@@ -58,9 +61,12 @@
 
 /* Micro Animations */
 @keyframes pulseGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
   }
+
   50% {
     box-shadow: 0 0 25px rgba(59, 130, 246, 0.7);
   }

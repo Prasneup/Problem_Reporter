@@ -46,7 +46,7 @@ export function calculateWardHealth(reports: Report[], wardId: number, municipal
 
   // Health formula: starting 100, deducting for issues, adding weight for resolution
   const score = 100 - (activeReports.length * 4) - (criticalReports.length * 10);
-  
+
   // Ensure score stays bounded
   return Math.max(10, Math.min(100, Math.round(score)));
 }
@@ -57,7 +57,7 @@ export function formatNepalTime(dateString: string): string {
   // Add 5 hours and 45 minutes for Nepal Time
   const NPT_OFFSET = (5 * 60 + 45) * 60 * 1000;
   const nptDate = new Date(date.getTime() + NPT_OFFSET);
-  
+
   return nptDate.toLocaleString('en-US', {
     timeZone: 'UTC',
     year: 'numeric',

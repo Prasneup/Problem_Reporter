@@ -9,7 +9,7 @@ export const CitizenPortal: React.FC<{ activeView: string }> = ({ activeView }) 
   const { reports, comments, addComment, supportReport, currentUser, reopenReport } = useCivicStore();
   const [selectedReportId, setSelectedReportId] = useState<string | undefined>(undefined);
   const [newCommentText, setNewCommentText] = useState('');
-  
+
   const [reopenId, setReopenId] = useState<string | null>(null);
   const [reopenNotes, setReopenNotes] = useState('');
   const [reopenImg, setReopenImg] = useState('');
@@ -64,8 +64,8 @@ export const CitizenPortal: React.FC<{ activeView: string }> = ({ activeView }) 
                   <td className="py-3 px-2">{formatNepalTime(r.createdAt).split(',')[0]}</td>
                   <td className="py-3 px-2 text-right">
                     {r.status === 'Resolved' && (
-                      <button 
-                        onClick={() => setReopenId(r.id)} 
+                      <button
+                        onClick={() => setReopenId(r.id)}
                         className="bg-rose-950 border border-rose-800 hover:bg-rose-900 text-rose-300 px-2.5 py-1 rounded font-semibold text-[10px] transition-colors"
                       >
                         Reopen Issue
@@ -125,14 +125,13 @@ export const CitizenPortal: React.FC<{ activeView: string }> = ({ activeView }) 
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Civic Feed</h3>
           <div className="space-y-3">
             {reports.map(r => (
-              <div 
-                key={r.id} 
+              <div
+                key={r.id}
                 onClick={() => setSelectedReportId(r.id)}
-                className={`p-3 rounded-lg border text-xs cursor-pointer transition-all duration-200 ${
-                  selectedReport?.id === r.id 
-                    ? 'bg-slate-800/60 border-blue-500/50' 
+                className={`p-3 rounded-lg border text-xs cursor-pointer transition-all duration-200 ${selectedReport?.id === r.id
+                    ? 'bg-slate-800/60 border-blue-500/50'
                     : 'bg-slate-900/30 border-slate-800/80 hover:bg-slate-800/20'
-                }`}
+                  }`}
               >
                 <div className="flex justify-between font-bold text-slate-200">
                   <span>{r.title}</span>
@@ -144,7 +143,7 @@ export const CitizenPortal: React.FC<{ activeView: string }> = ({ activeView }) 
                 <div className="flex items-center justify-between text-[9px] text-slate-500 mt-3 font-mono">
                   <span>{r.category} • Ward {r.wardId}</span>
                   <div className="flex items-center gap-2">
-                    <button 
+                    <button
                       onClick={(e) => { e.stopPropagation(); supportReport(r.id); }}
                       className="flex items-center gap-0.5 hover:text-blue-400 transition-colors"
                     >
@@ -189,7 +188,7 @@ export const CitizenPortal: React.FC<{ activeView: string }> = ({ activeView }) 
                 </div>
                 <div className="flex gap-2">
                   <input type="text" placeholder="Write a comment..." value={newCommentText} onChange={e => setNewCommentText(e.target.value)} className="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-300 focus:outline-none" />
-                  <button onClick={() => { if(newCommentText) { addComment(selectedReport.id, newCommentText); setNewCommentText(''); } }} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-2 rounded text-xs transition-colors">Post</button>
+                  <button onClick={() => { if (newCommentText) { addComment(selectedReport.id, newCommentText); setNewCommentText(''); } }} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-2 rounded text-xs transition-colors">Post</button>
                 </div>
               </div>
             </div>

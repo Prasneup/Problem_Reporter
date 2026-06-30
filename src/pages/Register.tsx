@@ -54,7 +54,7 @@ export const Register: React.FC = () => {
         formData.idNum || undefined,
         docUrl
       );
-      
+
       navigate('/login');
     } catch (err) {
       console.error(err);

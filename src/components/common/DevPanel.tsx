@@ -50,11 +50,10 @@ export const DevPanel: React.FC = () => {
 
         <button
           onClick={() => setOnlineStatus(!isOnline)}
-          className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded transition-all duration-200 ${
-            isOnline 
-              ? 'bg-emerald-950/50 border border-emerald-800 text-emerald-400 hover:bg-emerald-900/40' 
+          className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded transition-all duration-200 ${isOnline
+              ? 'bg-emerald-950/50 border border-emerald-800 text-emerald-400 hover:bg-emerald-900/40'
               : 'bg-rose-950/50 border border-rose-800 text-rose-400 hover:bg-rose-900/40'
-          }`}
+            }`}
         >
           {isOnline ? (
             <>

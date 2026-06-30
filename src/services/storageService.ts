@@ -45,9 +45,9 @@ export const storageService = {
 
       const { error } = await supabase.storage
         ? await supabase.storage.from(bucketName).upload(fullPath, fileBody, {
-            cacheControl: '3600',
-            upsert: false,
-          })
+          cacheControl: '3600',
+          upsert: false,
+        })
         : { error: new Error('Supabase storage is not initialized') };
 
       if (error) {

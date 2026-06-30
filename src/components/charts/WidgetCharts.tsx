@@ -25,7 +25,7 @@ export const CategoryBarChart: React.FC<ChartProps> = ({ reports }) => {
           <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
           <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tickLine={false} />
           <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-          <Tooltip 
+          <Tooltip
             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px' }}
             labelStyle={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '11px' }}
             itemStyle={{ color: '#60a5fa', fontSize: '11px' }}
@@ -54,18 +54,18 @@ export const ResolutionLineChart: React.FC<ChartProps> = ({ reports }) => {
         <AreaChart data={data}>
           <defs>
             <linearGradient id="colorSubmitted" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
           <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} tickLine={false} />
           <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-          <Tooltip 
+          <Tooltip
             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px' }}
             labelStyle={{ color: '#f8fafc', fontWeight: 'bold', fontSize: '11px' }}
             itemStyle={{ fontSize: '11px' }}

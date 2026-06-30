@@ -116,7 +116,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
       `);
 
       markersGroup.current?.addLayer(marker);
-      
+
       if (showHeatmap) {
         const radius = r.priority === 'Emergency' ? 600 : r.priority === 'Critical' ? 400 : 250;
         const opacity = r.priority === 'Emergency' ? 0.35 : 0.2;

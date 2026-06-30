@@ -81,11 +81,10 @@ export const Navbar: React.FC = () => {
                   notifications.map((n) => (
                     <div
                       key={n.id}
-                      className={`p-2.5 rounded-lg border text-xs transition-colors ${
-                        n.isRead 
-                          ? 'bg-slate-950/30 border-slate-900/50 opacity-60' 
+                      className={`p-2.5 rounded-lg border text-xs transition-colors ${n.isRead
+                          ? 'bg-slate-950/30 border-slate-900/50 opacity-60'
                           : 'bg-slate-800/40 border-slate-700/60 hover:bg-slate-800/60'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className={`font-semibold ${n.type === 'success' ? 'text-emerald-400' : n.type === 'warning' ? 'text-amber-400' : 'text-blue-400'}`}>

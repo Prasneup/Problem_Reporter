@@ -2,8 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useCivicStore } from '../../stores/civicStore';
-import { 
-  LayoutDashboard, Database, ClipboardList, 
+import {
+  LayoutDashboard, Database, ClipboardList,
   Settings, Users, BarChart3, AlertTriangle, Coins
 } from 'lucide-react';
 
@@ -15,7 +15,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) => {
   const { t } = useTranslation();
-  const { currentUser } = useCivicStore();
+  const { currentUser, signOut } = useCivicStore();
   const role = currentUser.role;
 
   const getNavItems = () => {
@@ -88,11 +88,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
             <button
               key={item.id}
               onClick={() => setCurrentTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
-                isActive
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${isActive
                   ? 'bg-blue-600/10 text-blue-400 border border-blue-600/30 font-semibold'
                   : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent'
-              }`}
+                }`}
             >
               <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
               <span>{item.label}</span>
@@ -100,7 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
           );
         })}
       </div>
-      
+
       <div className="p-4 border-t border-slate-800 space-y-2">
         <div className="flex justify-around text-[10px] text-blue-400">
           <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
@@ -109,8 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
         </div>
         <button
           onClick={async () => {
-            const { default: authService } = await import('../../services/authService');
-            await authService.signOut();
+            await signOut();
             window.location.href = '/login';
           }}
           className="w-full text-center py-2 bg-red-950/20 hover:bg-red-950/40 border border-red-900/30 hover:border-red-900/50 text-red-400 rounded-lg text-xs font-semibold transition-colors cursor-pointer"

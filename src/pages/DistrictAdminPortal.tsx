@@ -54,23 +54,22 @@ export const DistrictAdminPortal: React.FC<{ activeView: string }> = () => {
                   key={btn.id}
                   type="button"
                   onClick={() => setMapMode(btn.id)}
-                  className={`text-[9px] font-bold px-2 py-1 rounded transition-colors ${
-                    mapMode === btn.id 
-                      ? 'bg-blue-600 text-white' 
+                  className={`text-[9px] font-bold px-2 py-1 rounded transition-colors ${mapMode === btn.id
+                      ? 'bg-blue-600 text-white'
                       : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
+                    }`}
                 >
                   {btn.label}
                 </button>
               ))}
             </div>
           </div>
-          
+
           <div className="h-[320px] rounded-xl overflow-hidden border border-slate-800">
-            <LeafletMap 
-              reports={reports} 
-              showHeatmap={mapMode === 'heatmap'} 
-              showGisLayers={mapMode === 'gis'} 
+            <LeafletMap
+              reports={reports}
+              showHeatmap={mapMode === 'heatmap'}
+              showGisLayers={mapMode === 'gis'}
             />
           </div>
         </div>
@@ -82,7 +81,7 @@ export const DistrictAdminPortal: React.FC<{ activeView: string }> = () => {
               const muniReports = reports.filter(r => r.municipalityId === muni.id);
               const resolved = muniReports.filter(r => r.status === 'Resolved').length;
               const rate = muniReports.length > 0 ? Math.round((resolved / muniReports.length) * 100) : 100;
-              
+
               return (
                 <div key={muni.id} className="p-3 bg-slate-900/30 border border-slate-850 rounded-lg text-xs space-y-2">
                   <div className="flex justify-between font-bold text-slate-300">

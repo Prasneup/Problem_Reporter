@@ -14,7 +14,7 @@ interface CivicState {
   notifications: Notification[];
   offlineQueue: Report[];
   isOnline: boolean;
-  
+
   // Actions
   setLanguage: (lang: 'en' | 'ne') => void;
   setUserRole: (role: UserRole) => void;
@@ -22,12 +22,12 @@ interface CivicState {
   setOnlineStatus: (status: boolean) => void;
   loadInitialData: () => Promise<void>;
   signOut: () => Promise<void>;
-  
+
   submitReport: (report: Omit<Report, 'id' | 'reporterId' | 'status' | 'priority' | 'supportCount' | 'duplicateCount' | 'createdAt' | 'updatedAt' | 'images'> & { imageUrl?: string }) => Promise<void>;
   supportReport: (reportId: string) => Promise<void>;
   addComment: (reportId: string, content: string) => Promise<void>;
   updateReportStatus: (reportId: string, status: Report['status'], notes?: string) => Promise<void>;
-  
+
   assignInspector: (reportId: string, inspectorId: string, inspectorName: string, notes?: string) => void;
   completeAssignment: (reportId: string, afterImageUrl: string, notes?: string) => void;
   reopenReport: (reportId: string, notes: string, imageUrl: string) => void;
@@ -60,7 +60,7 @@ export const useCivicStore = create<CivicState>()(
 
       setLanguage: (language) => set({ language }),
       setCurrentUser: (currentUser) => set({ currentUser }),
-      
+
       setUserRole: (role) => {
         const profileKey = Object.keys(MOCK_PROFILES).find(
           (key) => MOCK_PROFILES[key].role === role
@@ -110,12 +110,12 @@ export const useCivicStore = create<CivicState>()(
         const id = 'r-' + Math.random().toString(36).substring(2, 11);
         const now = new Date().toISOString();
         const user = get().currentUser;
-        
+
         let imgUrl = newReport.imageUrl || '';
         const isEmergency = newReport.isEmergency || newReport.category === 'Emergency';
         const initialStatus = isEmergency ? 'Under_Review' : 'Submitted';
         const priority = calculatePriority(newReport.category, 0, isEmergency);
-        
+
         if (get().isOnline) {
           try {
             if (imgUrl && imgUrl.startsWith('data:')) {
@@ -130,7 +130,7 @@ export const useCivicStore = create<CivicState>()(
               priority,
               status: initialStatus
             });
-            
+
             const pointsAwarded = isEmergency ? 25 : 10;
             set((state) => ({
               reports: [submitted, ...state.reports],
@@ -229,7 +229,7 @@ export const useCivicStore = create<CivicState>()(
               const nextStatus = (nextSupports > 25 && r.priority !== 'Emergency')
                 ? 'Under_Review'
                 : r.status;
-              
+
               return {
                 ...r,
                 supportCount: nextSupports,
@@ -348,10 +348,10 @@ export const useCivicStore = create<CivicState>()(
 
         set((state) => {
           const assignments = [...state.assignments, assignmentObj];
-          const reports = state.reports.map(r => 
+          const reports = state.reports.map(r =>
             r.id === reportId ? { ...r, status: 'Assigned' as const, updatedAt: now } : r
           );
-          
+
           const newNotifications = [
             {
               id: 'n-insp-' + Math.random().toString(36).substring(2, 11),
@@ -372,7 +372,7 @@ export const useCivicStore = create<CivicState>()(
       completeAssignment: (reportId, afterImageUrl) => {
         const now = new Date().toISOString();
         set((state) => {
-          const assignments = state.assignments.map(a => 
+          const assignments = state.assignments.map(a =>
             a.reportId === reportId ? { ...a, status: 'Completed' as const, completedAt: now } : a
           );
 
@@ -388,12 +388,12 @@ export const useCivicStore = create<CivicState>()(
                   createdAt: now
                 }
               ];
-              return { 
-                ...r, 
-                status: 'Resolved' as const, 
+              return {
+                ...r,
+                status: 'Resolved' as const,
                 budgetSpent: r.budgetEstimated,
                 updatedAt: now,
-                images: updatedImages 
+                images: updatedImages
               };
             }
             return r;
@@ -448,7 +448,7 @@ export const useCivicStore = create<CivicState>()(
       syncOfflineQueue: () => {
         const queue = get().offlineQueue;
         if (queue.length === 0) return;
-        
+
         set((state) => {
           const syncedReports = queue.map((report) => ({
             ...report,

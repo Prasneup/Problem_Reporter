@@ -227,7 +227,7 @@ export const reportService = {
 
   async updateReportStatus(reportId: string, status: string, notes?: string, verifierId?: string): Promise<void> {
     const updatePayload = { status, updated_at: new Date().toISOString() };
-    
+
     await supabase
       .from('reports')
       .update(updatePayload)
@@ -268,7 +268,7 @@ export const reportService = {
 
   async fetchBudgets(): Promise<WardBudget[]> {
     await authService.ensureMappings();
-    
+
     const { data, error } = await supabase.from('budgets').select('*');
     if (error) return [];
 

@@ -7,7 +7,7 @@ export const WardOfficerPortal: React.FC<{ activeView: string }> = () => {
   const { reports, assignInspector, updateReportStatus, currentUser } = useCivicStore();
   const [selectedReportId, setSelectedReportId] = useState<string | undefined>(undefined);
   const [assignedNotes, setAssignedNotes] = useState('');
-  
+
   const inspectors = [
     { id: 'p-inspector', name: 'Hari Prasad Devkota', department: 'Roads & Sanitation' },
     { id: 'ins-2', name: 'Ramesh Chaudhary', department: 'Water & Irrigation' },
@@ -16,7 +16,7 @@ export const WardOfficerPortal: React.FC<{ activeView: string }> = () => {
 
   const wardId = currentUser.wardId || 15;
   const muniId = currentUser.municipalityId || 'ghorahi';
-  
+
   const wardReports = reports.filter(r => r.wardId === wardId && r.municipalityId === muniId);
   const selectedReport = reports.find(r => r.id === selectedReportId) || wardReports[0];
 
@@ -49,20 +49,18 @@ export const WardOfficerPortal: React.FC<{ activeView: string }> = () => {
               </div>
             ) : (
               wardReports.map(r => (
-                <div 
+                <div
                   key={r.id}
                   onClick={() => setSelectedReportId(r.id)}
-                  className={`p-3 rounded-lg border text-xs cursor-pointer transition-colors ${
-                    selectedReport?.id === r.id 
-                      ? 'bg-slate-800/60 border-blue-500/50' 
+                  className={`p-3 rounded-lg border text-xs cursor-pointer transition-colors ${selectedReport?.id === r.id
+                      ? 'bg-slate-800/60 border-blue-500/50'
                       : 'bg-slate-900/30 border-slate-850 hover:bg-slate-800/30'
-                  }`}
+                    }`}
                 >
                   <div className="flex justify-between items-start">
                     <span className="font-bold text-slate-200">{r.title}</span>
-                    <span className={`text-[8px] px-1 py-0.5 rounded font-mono ${
-                      r.priority === 'Critical' || r.priority === 'Emergency' ? 'bg-red-950 text-red-400' : 'bg-slate-850 text-slate-400'
-                    }`}>{r.priority}</span>
+                    <span className={`text-[8px] px-1 py-0.5 rounded font-mono ${r.priority === 'Critical' || r.priority === 'Emergency' ? 'bg-red-950 text-red-400' : 'bg-slate-850 text-slate-400'
+                      }`}>{r.priority}</span>
                   </div>
                   <div className="text-[10px] text-slate-400 mt-1 line-clamp-1">{r.address}</div>
                   <div className="flex justify-between items-center text-[9px] text-slate-500 mt-2">
@@ -104,16 +102,16 @@ export const WardOfficerPortal: React.FC<{ activeView: string }> = () => {
                   <UserCheck className="w-4 h-4 text-blue-400" />
                   Deploy Field Inspector
                 </h4>
-                <input 
-                  type="text" 
-                  placeholder="Task instructions (e.g., assess potholes, fill with rapid concrete)..." 
-                  value={assignedNotes} 
-                  onChange={e => setAssignedNotes(e.target.value)} 
-                  className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-300 focus:outline-none" 
+                <input
+                  type="text"
+                  placeholder="Task instructions (e.g., assess potholes, fill with rapid concrete)..."
+                  value={assignedNotes}
+                  onChange={e => setAssignedNotes(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-300 focus:outline-none"
                 />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                   {inspectors.map(ins => (
-                    <button 
+                    <button
                       key={ins.id}
                       type="button"
                       onClick={() => handleAssign(ins.id, ins.name)}

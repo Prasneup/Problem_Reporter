@@ -11,7 +11,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     muniOfficer: 'Municipality Officer',
     distAdmin: 'District Administrator',
     superAdmin: 'Super Admin',
-    
+
     // Categories
     'Road Damage': 'Road Damage',
     'Potholes': 'Potholes',
@@ -25,7 +25,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'Infrastructure Problems': 'Infrastructure Problems',
     'Other': 'Other',
     'Emergency': 'Emergency Incidents',
-    
+
     // Statuses
     'Submitted': 'Submitted',
     'AI_Flagged': 'AI Verification Flagged',
@@ -52,7 +52,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'selectWard': 'Select Ward',
     'address': 'Location / Address',
     'gps': 'GPS Coordinates',
-    
+
     // General UI
     'dashboard': 'Dashboard',
     'reports': 'Reports',

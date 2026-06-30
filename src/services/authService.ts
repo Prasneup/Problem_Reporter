@@ -96,7 +96,7 @@ export const authService = {
     citizenshipUrl?: string
   ): Promise<UserProfile> {
     await this.ensureMappings();
-    
+
     // Check duplicate email first
     const exists = await this.checkEmailExists(email);
     if (exists) {
@@ -122,15 +122,15 @@ export const authService = {
     });
 
     console.log("AUTH DATA FULL:", JSON.stringify(authData, null, 2));
-console.log("AUTH ERROR:", authError);
+    console.log("AUTH ERROR:", authError);
 
-if (authError) {
-  throw authError;
-}
+    if (authError) {
+      throw authError;
+    }
 
-if (!authData.user) {
-  throw new Error("No user returned from Supabase");
-}
+    if (!authData.user) {
+      throw new Error("No user returned from Supabase");
+    }
 
     // Explicitly create user profile row since database trigger might not be set
     const profileRow = {

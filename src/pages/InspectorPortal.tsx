@@ -8,11 +8,11 @@ export const InspectorPortal: React.FC<{ activeView: string }> = () => {
   const [selectedReportId, setSelectedReportId] = useState<string | undefined>(undefined);
   const [afterUrl, setAfterUrl] = useState('');
   const [resolverNotes, setResolverNotes] = useState('');
-  
+
   const [matchingState, setMatchingState] = useState<'idle' | 'scanning' | 'success'>('idle');
 
-  const assignedJobs = reports.filter(r => 
-    r.status === 'Assigned' && 
+  const assignedJobs = reports.filter(r =>
+    r.status === 'Assigned' &&
     assignments.some(a => a.reportId === r.id && a.inspectorId === currentUser.id)
   );
 
@@ -21,7 +21,7 @@ export const InspectorPortal: React.FC<{ activeView: string }> = () => {
   const handleResolve = () => {
     if (!afterUrl || !selectedReport) return;
     setMatchingState('scanning');
-    
+
     setTimeout(() => {
       setMatchingState('success');
     }, 1500);
@@ -54,14 +54,13 @@ export const InspectorPortal: React.FC<{ activeView: string }> = () => {
               </div>
             ) : (
               assignedJobs.map(r => (
-                <div 
+                <div
                   key={r.id}
                   onClick={() => setSelectedReportId(r.id)}
-                  className={`p-3 rounded-lg border text-xs cursor-pointer transition-colors ${
-                    selectedReport?.id === r.id 
-                      ? 'bg-slate-800/60 border-blue-500/50' 
+                  className={`p-3 rounded-lg border text-xs cursor-pointer transition-colors ${selectedReport?.id === r.id
+                      ? 'bg-slate-800/60 border-blue-500/50'
                       : 'bg-slate-900/30 border-slate-850 hover:bg-slate-800/30'
-                  }`}
+                    }`}
                 >
                   <div className="font-bold text-slate-200">{r.title}</div>
                   <div className="text-[10px] text-slate-400 mt-1 line-clamp-1">{r.address}</div>
@@ -83,7 +82,7 @@ export const InspectorPortal: React.FC<{ activeView: string }> = () => {
           {selectedReport ? (
             <div className="glass-panel p-5 space-y-4">
               <h3 className="text-base font-bold text-slate-100">{selectedReport.title}</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-1">Assigned Tasks / Notes</h4>
@@ -94,10 +93,10 @@ export const InspectorPortal: React.FC<{ activeView: string }> = () => {
                 {selectedReport.images && selectedReport.images[0] && (
                   <div>
                     <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-1">Before State Image</h4>
-                    <img 
-                      src={selectedReport.images[0].url} 
-                      alt="Before" 
-                      className="w-full h-24 object-cover rounded-lg border border-slate-800" 
+                    <img
+                      src={selectedReport.images[0].url}
+                      alt="Before"
+                      className="w-full h-24 object-cover rounded-lg border border-slate-800"
                     />
                   </div>
                 )}
@@ -109,23 +108,23 @@ export const InspectorPortal: React.FC<{ activeView: string }> = () => {
                   Upload Resolution Proof
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <input 
-                    type="text" 
-                    placeholder="Resolution Photo URL" 
-                    value={afterUrl} 
-                    onChange={e => setAfterUrl(e.target.value)} 
-                    className="bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-300 focus:outline-none" 
+                  <input
+                    type="text"
+                    placeholder="Resolution Photo URL"
+                    value={afterUrl}
+                    onChange={e => setAfterUrl(e.target.value)}
+                    className="bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-300 focus:outline-none"
                   />
-                  <input 
-                    type="text" 
-                    placeholder="Notes (e.g. Potholes asphalted)" 
-                    value={resolverNotes} 
-                    onChange={e => setResolverNotes(e.target.value)} 
-                    className="bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-300 focus:outline-none" 
+                  <input
+                    type="text"
+                    placeholder="Notes (e.g. Potholes asphalted)"
+                    value={resolverNotes}
+                    onChange={e => setResolverNotes(e.target.value)}
+                    className="bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-300 focus:outline-none"
                   />
                 </div>
-                <button 
-                  onClick={handleResolve} 
+                <button
+                  onClick={handleResolve}
                   disabled={!afterUrl}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-800 disabled:text-slate-600 disabled:border-transparent font-semibold py-2.5 rounded-lg text-xs transition-colors shadow-glow text-white"
                 >

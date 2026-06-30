@@ -74,7 +74,7 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
         <div className="space-y-4">
           <input type="text" required placeholder="Issue Title (e.g. Broken Streetlight)" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:border-blue-500 focus:outline-none" />
           <textarea required placeholder="Describe the issue in detail..." value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:border-blue-500 focus:outline-none" />
-          
+
           <select value={category} onChange={(e) => setCategory(e.target.value as ReportCategory)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:border-blue-500 focus:outline-none">
             {['Road Damage', 'Potholes', 'Garbage', 'Water Supply', 'Drainage', 'Electricity', 'Street Lights', 'Environmental Issues', 'Public Safety', 'Infrastructure Problems', 'Other', 'Emergency'].map(cat => (
               <option key={cat} value={cat}>{cat}</option>
@@ -89,13 +89,13 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
                 <span>Upload Image File</span>
                 <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
               </label>
-              
+
               <button type="button" onClick={handleAutofillGps} className="bg-slate-800 text-slate-300 px-3 py-2.5 rounded-lg border border-slate-700 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-blue-400" /> 
+                <MapPin className="w-3.5 h-3.5 text-blue-400" />
                 Use GPS
               </button>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <ImageIcon className="w-3.5 h-3.5 text-slate-500" />
               <input type="text" placeholder="Or paste image URL link..." value={imgUrl.startsWith('data:') ? '' : imgUrl} onChange={(e) => { setImgUrl(e.target.value); setAiVerified(false); }} className="flex-1 bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none" />
@@ -104,7 +104,7 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
 
           {imgUrl && <AiImageScanner imageUrl={imgUrl} category={category} onAnalysisComplete={() => setAiVerified(true)} />}
         </div>
-        
+
         <div className="space-y-3">
           <div className="h-[250px] rounded-xl overflow-hidden border border-slate-800">
             <LeafletMap reports={reports} onSelectCoords={handleMapClick} selectedCoords={coords} />

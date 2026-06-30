@@ -43,14 +43,13 @@ export const VerifierPortal: React.FC<{ activeView: string }> = () => {
               </div>
             ) : (
               queue.map(r => (
-                <div 
+                <div
                   key={r.id}
                   onClick={() => setSelectedReportId(r.id)}
-                  className={`p-3 rounded-lg border text-xs cursor-pointer transition-colors ${
-                    selectedReport?.id === r.id 
-                      ? 'bg-slate-800/60 border-blue-500/50' 
+                  className={`p-3 rounded-lg border text-xs cursor-pointer transition-colors ${selectedReport?.id === r.id
+                      ? 'bg-slate-800/60 border-blue-500/50'
                       : 'bg-slate-900/30 border-slate-850 hover:bg-slate-800/30'
-                  }`}
+                    }`}
                 >
                   <div className="font-bold text-slate-200">{r.title}</div>
                   <div className="text-[10px] text-slate-400 mt-1 line-clamp-1">{r.address}</div>
@@ -91,10 +90,10 @@ export const VerifierPortal: React.FC<{ activeView: string }> = () => {
                 {selectedReport.images && selectedReport.images[0] && (
                   <div>
                     <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-1">Report Image Attachment</h4>
-                    <img 
-                      src={selectedReport.images[0].url} 
-                      alt="Attachment" 
-                      className="w-full h-24 object-cover rounded-lg border border-slate-800" 
+                    <img
+                      src={selectedReport.images[0].url}
+                      alt="Attachment"
+                      className="w-full h-24 object-cover rounded-lg border border-slate-800"
                     />
                   </div>
                 )}
@@ -105,22 +104,22 @@ export const VerifierPortal: React.FC<{ activeView: string }> = () => {
                   <ShieldAlert className="w-4 h-4 text-blue-400" />
                   Perform Verification Audit
                 </h4>
-                <input 
-                  type="text" 
-                  placeholder="Provide audit notes or resolution validation comments..." 
-                  value={verifyNotes} 
-                  onChange={e => setVerifyNotes(e.target.value)} 
-                  className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-300 focus:outline-none" 
+                <input
+                  type="text"
+                  placeholder="Provide audit notes or resolution validation comments..."
+                  value={verifyNotes}
+                  onChange={e => setVerifyNotes(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-300 focus:outline-none"
                 />
                 <div className="flex gap-2">
-                  <button 
-                    onClick={() => handleVerify(selectedReport.id, 'Approve')} 
+                  <button
+                    onClick={() => handleVerify(selectedReport.id, 'Approve')}
                     className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded text-xs transition-colors shadow-sm"
                   >
                     Confirm Report Existence (Approve)
                   </button>
-                  <button 
-                    onClick={() => handleVerify(selectedReport.id, 'Reject')} 
+                  <button
+                    onClick={() => handleVerify(selectedReport.id, 'Reject')}
                     className="bg-rose-900 hover:bg-rose-800 text-white font-bold py-2 px-4 rounded text-xs transition-colors"
                   >
                     Reject Report (Fake / Spam)
