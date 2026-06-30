@@ -89,7 +89,7 @@ export const reportService = {
         longitude: r.longitude,
         address: r.address,
         municipalityId: localMuni,
-        wardId: r.ward_id ? 15 : 1, // fallback to ward 15 if missing
+        wardId: r.ward_id && r.municipality_id ? (authService.getLocalWardNumber(r.municipality_id, r.ward_id) || 15) : 15,
         reporterId: r.reporter_id,
         status: r.status,
         priority: r.priority,
@@ -244,6 +244,28 @@ export const reportService = {
     }
   },
 
+  async fetchComments(): Promise<Comment[]> {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*, profiles(*)');
+
+    if (error) return [];
+    if (!data) return [];
+
+    const rows = data as unknown as DbCommentWithProfile[];
+
+    return rows.map((commentRow) => ({
+      id: commentRow.id,
+      reportId: commentRow.report_id,
+      userId: commentRow.user_id,
+      userName: commentRow.profiles?.name || 'Anonymous',
+      userRole: (commentRow.profiles?.role || 'Citizen') as UserRole,
+      content: commentRow.content,
+      isOfficialUpdate: ['Ward Officer', 'Municipality Officer', 'District Administrator', 'Super Admin'].includes(commentRow.profiles?.role || ''),
+      createdAt: commentRow.created_at
+    }));
+  },
+
   async fetchBudgets(): Promise<WardBudget[]> {
     await authService.ensureMappings();
     
@@ -253,10 +275,24 @@ export const reportService = {
     const budgetRows = data as DbBudgetRow[];
 
     return budgetRows.map((b) => {
+      let localMuniId = 'ghorahi';
+      let wardNumber = 15;
+
+      if (b.entity_type === 'ward') {
+        const details = authService.getLocalWardDetails(b.entity_id);
+        if (details) {
+          localMuniId = details.localMuniId;
+          wardNumber = details.wardNumber;
+        }
+      } else if (b.entity_type === 'municipality') {
+        localMuniId = authService.getLocalMuniId(b.entity_id) || 'ghorahi';
+        wardNumber = 0;
+      }
+
       return {
         id: b.id,
-        municipalityId: authService.getLocalMuniId(b.entity_id) || 'ghorahi',
-        wardId: 15,
+        municipalityId: localMuniId,
+        wardId: wardNumber,
         allocated: Number(b.allocated),
         spent: Number(b.spent)
       };

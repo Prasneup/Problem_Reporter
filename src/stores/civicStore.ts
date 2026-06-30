@@ -84,11 +84,15 @@ export const useCivicStore = create<CivicState>()(
           const { default: reportService } = await import('../services/reportService');
           const reports = await reportService.fetchReports();
           const budgets = await reportService.fetchBudgets();
+          const comments = await reportService.fetchComments();
           if (reports && reports.length > 0) {
             set({ reports });
           }
           if (budgets && budgets.length > 0) {
             set({ budgets });
+          }
+          if (comments && comments.length > 0) {
+            set({ comments });
           }
         } catch (err) {
           console.error('Error loading initial data from Supabase:', err);

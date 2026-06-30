@@ -46,6 +46,30 @@ export const authService = {
     return Object.keys(municipalityIdCache).find(key => municipalityIdCache[key] === dbMuniId);
   },
 
+  getLocalWardNumber(dbMuniId: string, dbWardId: string): number | undefined {
+    const wardMap = wardIdCache[dbMuniId];
+    if (!wardMap) return undefined;
+    const foundKey = Object.keys(wardMap).find(key => wardMap[Number(key)] === dbWardId);
+    return foundKey ? Number(foundKey) : undefined;
+  },
+
+  getLocalWardDetails(dbWardId: string): { localMuniId: string; wardNumber: number } | undefined {
+    for (const dbMuniId of Object.keys(wardIdCache)) {
+      const wardMap = wardIdCache[dbMuniId];
+      const foundKey = Object.keys(wardMap).find(key => wardMap[Number(key)] === dbWardId);
+      if (foundKey) {
+        const localMuniId = this.getLocalMuniId(dbMuniId);
+        if (localMuniId) {
+          return {
+            localMuniId,
+            wardNumber: Number(foundKey)
+          };
+        }
+      }
+    }
+    return undefined;
+  },
+
   async checkEmailExists(email: string): Promise<boolean> {
     const { data, error } = await supabase
       .from('profiles')
@@ -97,9 +121,16 @@ export const authService = {
       }
     });
 
-    if (authError || !authData.user) {
-      throw authError || new Error('Signup failed: user not created.');
-    }
+    console.log("AUTH DATA FULL:", JSON.stringify(authData, null, 2));
+console.log("AUTH ERROR:", authError);
+
+if (authError) {
+  throw authError;
+}
+
+if (!authData.user) {
+  throw new Error("No user returned from Supabase");
+}
 
     // Explicitly create user profile row since database trigger might not be set
     const profileRow = {

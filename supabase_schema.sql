@@ -206,3 +206,114 @@ CREATE POLICY "Reporters can update their own reports" ON public.reports FOR UPD
 CREATE POLICY "Officers can manage all reports" ON public.reports FOR ALL USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('Ward Officer', 'Municipality Officer', 'District Administrator', 'Super Admin'))
 );
+
+-- Seed Municipalities and Wards for Dang District
+
+-- Create Temp Table for bulk inserting municipalities and mapping wards
+CREATE TEMP TABLE temp_muni (
+    local_id VARCHAR(50),
+    name VARCHAR(100),
+    nepali_name VARCHAR(100),
+    type VARCHAR(50),
+    headquarters VARCHAR(100),
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    ward_count INTEGER
+);
+
+INSERT INTO temp_muni (local_id, name, nepali_name, type, headquarters, latitude, longitude, ward_count) VALUES
+('ghorahi', 'Ghorahi Sub-Metropolitan City', 'घोराही उपमहानगरपालिका', 'Sub-Metropolitan City', 'Ghorahi', 28.062, 82.484, 19),
+('tulsipur', 'Tulsipur Sub-Metropolitan City', 'तुलसीपुर उपमहानगरपालिका', 'Sub-Metropolitan City', 'Tulsipur', 28.131, 82.296, 19),
+('lamahi', 'Lamahi Municipality', 'लमही नगरपालिका', 'Municipality', 'Lamahi', 27.876, 82.548, 9),
+('rapti', 'Rapti Rural Municipality', 'राप्ती गाउँपालिका', 'Rural Municipality', 'Masuriya', 27.858, 82.695, 9),
+('gadhawa', 'Gadhawa Rural Municipality', 'गढवा गाउँपालिका', 'Rural Municipality', 'Gadhawa', 27.818, 82.518, 8),
+('dangisharan', 'Dangisharan Rural Municipality', 'दंगीशरण गाउँपालिका', 'Rural Municipality', 'Hekuli', 28.113, 82.189, 7),
+('babai', 'Babai Rural Municipality', 'बबई गाउँपालिका', 'Rural Municipality', 'Tulasipur (Hapur)', 28.188, 82.072, 7),
+('shantinagar', 'Shantinagar Rural Municipality', 'शान्तिनगर गाउँपालिका', 'Rural Municipality', 'Chirahana', 28.214, 82.176, 7),
+('bangalachuli', 'Bangalachuli Rural Municipality', 'बंगलाचुली गाउँपालिका', 'Rural Municipality', 'Kavre', 28.147, 82.585, 8),
+('rajpur', 'Rajpur Rural Municipality', 'राजपुर गाउँपालिका', 'Rural Municipality', 'Gangapraspur', 27.765, 82.342, 7);
+
+-- Insert into public.municipalities and generate wards
+DO $$
+DECLARE
+    muni_rec RECORD;
+    new_muni_id UUID;
+    w_num INT;
+BEGIN
+    FOR muni_rec IN SELECT * FROM temp_muni LOOP
+        -- Insert municipality
+        INSERT INTO public.municipalities (name, nepali_name, type, headquarters, latitude, longitude)
+        VALUES (muni_rec.name, muni_rec.nepali_name, muni_rec.type, muni_rec.headquarters, muni_rec.latitude, muni_rec.longitude)
+        RETURNING id INTO new_muni_id;
+
+        -- Generate and insert wards for this municipality
+        FOR w_num IN 1..muni_rec.ward_count LOOP
+            INSERT INTO public.wards (municipality_id, ward_number)
+            VALUES (new_muni_id, w_num);
+        END LOOP;
+    END LOOP;
+END $$;
+
+DROP TABLE temp_muni;
+
+-- Seed budgets for demonstration
+INSERT INTO public.budgets (entity_type, entity_id, year, category, allocated, spent)
+SELECT 
+    'ward', 
+    w.id, 
+    '2082/83', 
+    'Infrastructure & Development', 
+    5000000, 
+    3200000
+FROM public.wards w
+JOIN public.municipalities m ON w.municipality_id = m.id
+WHERE m.name = 'Ghorahi Sub-Metropolitan City' AND w.ward_number = 15;
+
+INSERT INTO public.budgets (entity_type, entity_id, year, category, allocated, spent)
+SELECT 
+    'ward', 
+    w.id, 
+    '2082/83', 
+    'Infrastructure & Development', 
+    3500000, 
+    1100000
+FROM public.wards w
+JOIN public.municipalities m ON w.municipality_id = m.id
+WHERE m.name = 'Ghorahi Sub-Metropolitan City' AND w.ward_number = 2;
+
+INSERT INTO public.budgets (entity_type, entity_id, year, category, allocated, spent)
+SELECT 
+    'ward', 
+    w.id, 
+    '2082/83', 
+    'Infrastructure & Development', 
+    4500000, 
+    2800000
+FROM public.wards w
+JOIN public.municipalities m ON w.municipality_id = m.id
+WHERE m.name = 'Tulsipur Sub-Metropolitan City' AND w.ward_number = 5;
+
+INSERT INTO public.budgets (entity_type, entity_id, year, category, allocated, spent)
+SELECT 
+    'ward', 
+    w.id, 
+    '2082/83', 
+    'Infrastructure & Development', 
+    3000000, 
+    900000
+FROM public.wards w
+JOIN public.municipalities m ON w.municipality_id = m.id
+WHERE m.name = 'Tulsipur Sub-Metropolitan City' AND w.ward_number = 12;
+
+INSERT INTO public.budgets (entity_type, entity_id, year, category, allocated, spent)
+SELECT 
+    'ward', 
+    w.id, 
+    '2082/83', 
+    'Infrastructure & Development', 
+    2500000, 
+    2100000
+FROM public.wards w
+JOIN public.municipalities m ON w.municipality_id = m.id
+WHERE m.name = 'Lamahi Municipality' AND w.ward_number = 3;
+
