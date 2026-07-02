@@ -32,22 +32,22 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 px-4 relative overflow-hidden">
-      {/* Decorative Background Glows */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-800 px-4 relative overflow-hidden font-sans">
+      {/* Decorative Background Elements */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-100 rounded-full blur-3xl pointer-events-none opacity-40" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-100 rounded-full blur-3xl pointer-events-none opacity-40" />
 
-      <div className="w-full max-w-md bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl rounded-2xl p-8 shadow-2xl relative z-10">
+      <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl p-8 shadow-xl relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex p-3 bg-blue-500/10 rounded-xl text-blue-400 mb-3 border border-blue-500/20">
+          <div className="inline-flex p-3 bg-blue-50 rounded-xl text-blue-600 mb-3 border border-blue-100">
             <LogIn className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">Dang District Portal</h2>
-          <p className="text-slate-400 text-xs mt-1">Smart City Problem Reporter Platform</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-800">Dang District Portal</h2>
+          <p className="text-slate-400 text-xs mt-1 font-semibold">Smart City Problem Reporter Platform</p>
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-xs flex items-center gap-2 mb-6 animate-pulse">
+          <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-red-600 text-xs flex items-center gap-2 mb-6 animate-pulse">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -57,14 +57,14 @@ export const Login: React.FC = () => {
           <div className="space-y-1">
             <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+              <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="citizen@dang.gov.np"
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:border-blue-500 focus:outline-none transition-colors"
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:outline-none transition-all"
               />
             </div>
           </div>
@@ -72,17 +72,17 @@ export const Login: React.FC = () => {
           <div className="space-y-1">
             <div className="flex justify-between items-center">
               <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Password</label>
-              <Link to="/forgot-password" className="text-[10px] text-blue-400 hover:underline">Forgot password?</Link>
+              <Link to="/forgot-password" className="text-[10px] text-blue-600 hover:underline font-bold">Forgot password?</Link>
             </div>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+              <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:border-blue-500 focus:outline-none transition-colors"
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:outline-none transition-all"
               />
             </div>
           </div>
@@ -90,16 +90,16 @@ export const Login: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold py-2.5 rounded-lg text-xs transition-all shadow-glow hover:shadow-cyan-500/10 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {loading ? <Loader className="w-3.5 h-3.5 animate-spin" /> : 'Sign In to Portal'}
           </button>
         </form>
 
-        <div className="text-center mt-6 pt-6 border-t border-slate-800/60">
+        <div className="text-center mt-6 pt-6 border-t border-slate-100">
           <p className="text-xs text-slate-400">
             First time reporting?{' '}
-            <Link to="/register" className="text-blue-400 hover:underline font-medium">Create citizen account</Link>
+            <Link to="/register" className="text-blue-600 hover:underline font-bold">Create citizen account</Link>
           </p>
         </div>
       </div>
