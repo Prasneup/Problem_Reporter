@@ -23,7 +23,7 @@ interface CivicState {
   loadInitialData: () => Promise<void>;
   signOut: () => Promise<void>;
 
-  submitReport: (report: Omit<Report, 'id' | 'reporterId' | 'status' | 'priority' | 'supportCount' | 'duplicateCount' | 'createdAt' | 'updatedAt' | 'images'> & { imageUrl?: string }) => Promise<void>;
+  submitReport: (report: Omit<Report, 'id' | 'reporterId' | 'status' | 'priority' | 'supportCount' | 'duplicateCount' | 'createdAt' | 'updatedAt' | 'images'> & { imageUrl?: string; aiAnalysis?: any }) => Promise<void>;
   supportReport: (reportId: string) => Promise<void>;
   addComment: (reportId: string, content: string) => Promise<void>;
   updateReportStatus: (reportId: string, status: Report['status'], notes?: string) => Promise<void>;
@@ -113,7 +113,19 @@ export const useCivicStore = create<CivicState>()(
 
         let imgUrl = newReport.imageUrl || '';
         const isEmergency = newReport.isEmergency || newReport.category === 'Emergency';
-        const initialStatus = isEmergency ? 'Under_Review' : 'Submitted';
+        
+        // Calculate status dynamically from AI Trust Engine details
+        let initialStatus: Report['status'] = isEmergency ? 'Under_Review' : 'Submitted';
+        if (newReport.aiAnalysis) {
+          const trustScore = newReport.aiAnalysis.trustScore;
+          const isFake = newReport.aiAnalysis.isFake;
+          if (trustScore < 70 || isFake) {
+            initialStatus = 'AI_Flagged';
+          } else if (trustScore < 85) {
+            initialStatus = 'Under_Review';
+          }
+        }
+        
         const priority = calculatePriority(newReport.category, 0, isEmergency);
 
         if (get().isOnline) {
@@ -128,7 +140,8 @@ export const useCivicStore = create<CivicState>()(
               imageUrl: imgUrl || undefined,
               reporterId: user.id,
               priority,
-              status: initialStatus
+              status: initialStatus,
+              aiAnalysis: newReport.aiAnalysis
             });
 
             const pointsAwarded = isEmergency ? 25 : 10;

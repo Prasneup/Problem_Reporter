@@ -114,7 +114,7 @@ export const reportService = {
   },
 
   async submitReport(
-    report: Omit<Report, 'id' | 'reporterId' | 'status' | 'priority' | 'supportCount' | 'duplicateCount' | 'createdAt' | 'updatedAt' | 'images'> & { imageUrl?: string; reporterId: string; priority: PriorityLevel; status: ReportStatus }
+    report: Omit<Report, 'id' | 'reporterId' | 'status' | 'priority' | 'supportCount' | 'duplicateCount' | 'createdAt' | 'updatedAt' | 'images'> & { imageUrl?: string; reporterId: string; priority: PriorityLevel; status: ReportStatus; aiAnalysis?: any }
   ): Promise<Report> {
     await authService.ensureMappings();
 
@@ -154,7 +154,7 @@ export const reportService = {
         report_id: insertedReport.id,
         url: report.imageUrl,
         image_type: 'before',
-        ai_analysis: {
+        ai_analysis: report.aiAnalysis || {
           category: report.category,
           confidence: 0.95,
           qualityScore: 0.88,
