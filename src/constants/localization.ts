@@ -4,6 +4,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   en: {
     appName: 'Dang Smart City Portal',
     tagline: 'Digital Governance & Problem Reporting Platform',
+    subhead: 'Dang',
     citizen: 'Citizen',
     verifier: 'Community Verifier',
     inspector: 'Field Inspector',
@@ -67,6 +68,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   ne: {
     appName: 'दाङ स्मार्ट सिटी पोर्टल',
     tagline: 'डिजिटल सुशासन र समस्या दर्ता प्लेटफर्म',
+    subhead: 'दाङ',
     citizen: 'नागरिक',
     verifier: 'समुदाय प्रमाणीकरणकर्ता',
     inspector: 'क्षेत्रीय निरीक्षक',

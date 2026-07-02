@@ -4,7 +4,7 @@ import { useCivicStore } from '../../stores/civicStore';
 import { Bell, Globe, ChevronDown, Search } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { language, setLanguage } = useTranslation();
+  const { t, language, setLanguage } = useTranslation();
   const { currentUser, notifications, dismissNotification } = useCivicStore();
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -37,9 +37,9 @@ export const Navbar: React.FC = () => {
 
         <div className="hidden sm:block">
           <h1 className="text-sm font-bold text-slate-800 leading-tight">
-            Dang Smart City Portal
+            {t('appName')}
           </h1>
-          <p className="text-[9px] text-slate-500 font-semibold">घोराही उपमहानगरपालिका, दाङ</p>
+          <p className="text-[10px] text-slate-500 font-bold tracking-wide">{t('subhead')}</p>
         </div>
       </div>
 
