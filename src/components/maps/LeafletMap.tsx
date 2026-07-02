@@ -31,6 +31,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
 
+    // Set view centered on Dang with CartoDB Voyager light tiles for premium UX
     const map = L.map(mapRef.current, { zoomControl: false }).setView(
       [DANG_CENTER.lat, DANG_CENTER.lng],
       11
@@ -39,16 +40,19 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
 
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      className: 'dark-map-tiles',
+    // Using CartoDB Voyager tiles (modern, premium clean light layout)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20
     }).addTo(map);
 
     markersGroup.current = L.featureGroup().addTo(map);
     heatGroup.current = L.featureGroup();
     gisGroup.current = L.featureGroup();
 
-    map.on('dblclick', (e: L.LeafletMouseEvent) => {
+    // Support single click for easy Pin dropping
+    map.on('click', (e: L.LeafletMouseEvent) => {
       if (onSelectCoords) {
         onSelectCoords(e.latlng.lat, e.latlng.lng);
       }
@@ -71,9 +75,13 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     }
 
     if (selectedCoords) {
+      // Add custom pinging active pin placement
       placementMarker.current = L.marker([selectedCoords.lat, selectedCoords.lng], {
         icon: L.divIcon({
-          html: `<div class="w-6 h-6 rounded-full bg-blue-500 border-2 border-white animate-ping"></div>`,
+          html: `<div class="relative flex items-center justify-center">
+            <span class="animate-ping absolute inline-flex h-6 w-6 rounded-full bg-blue-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-600 border-2 border-white shadow"></span>
+          </div>`,
           className: '',
           iconSize: [24, 24],
           iconAnchor: [12, 12]
@@ -93,9 +101,9 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     gisGroup.current.clearLayers();
 
     reports.forEach((r) => {
-      const color = r.priority === 'Emergency' ? '#dc2626' : r.priority === 'Critical' ? '#ea580c' : r.priority === 'High' ? '#eab308' : '#3b82f6';
-      const markerHtml = `<div class="w-5 h-5 rounded-full flex items-center justify-center border-2 border-slate-900 shadow-lg cursor-pointer" style="background-color: ${color}">
-        <span class="w-2 h-2 rounded-full bg-white"></span>
+      const color = r.priority === 'Emergency' ? '#dc2626' : r.priority === 'Critical' ? '#ea580c' : r.priority === 'High' ? '#eab308' : '#2563eb';
+      const markerHtml = `<div class="w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-md cursor-pointer hover:scale-110 transition-transform" style="background-color: ${color}">
+        <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
       </div>`;
 
       const marker = L.marker([r.latitude, r.longitude], {
@@ -108,10 +116,10 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
       });
 
       marker.bindPopup(`
-        <div class="p-1 min-w-[160px]">
-          <h4 class="font-bold text-slate-100 text-xs">${r.title}</h4>
-          <p class="text-[10px] text-slate-400 mt-0.5">${r.category} | Ward ${r.wardId}</p>
-          <span class="inline-block mt-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-800 text-blue-400 border border-slate-700">${r.status.replace('_', ' ')}</span>
+        <div class="p-1 min-w-[170px] font-sans">
+          <h4 class="font-bold text-slate-800 text-xs m-0 leading-tight">${r.title}</h4>
+          <p class="text-[10px] text-slate-500 m-0 mt-1 font-semibold">${r.category} | Ward ${r.wardId}</p>
+          <span class="inline-block mt-2 px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-blue-50 text-blue-600 border border-blue-150">${r.status.replace('_', ' ')}</span>
         </div>
       `);
 
@@ -136,7 +144,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         [[28.131, 82.296], [28.125, 82.31], [28.14, 82.285]]
       ];
       pipes.forEach(line => {
-        const poly = L.polyline(line as L.LatLngExpression[], { color: '#0ea5e9', weight: 3, opacity: 0.7, dashArray: '5, 10' });
+        const poly = L.polyline(line as L.LatLngExpression[], { color: '#2563eb', weight: 3, opacity: 0.7, dashArray: '5, 10' });
         gisGroup.current?.addLayer(poly);
       });
     }
@@ -156,10 +164,10 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   }, [reports, showHeatmap, showGisLayers, activeReportId]);
 
   return (
-    <div className="relative w-full h-full rounded-xl overflow-hidden border border-slate-800 shadow-inner">
+    <div className="relative w-full h-full rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
       <div ref={mapRef} className="w-full h-full min-h-[350px]" />
-      <div className="absolute bottom-3 left-3 z-[400] bg-slate-950/80 border border-slate-800 rounded px-2 py-1 text-[10px] text-slate-400 backdrop-blur-sm">
-        Double click map to select custom GPS location
+      <div className="absolute bottom-3 left-3 z-[400] bg-white/90 border border-slate-200 rounded-xl px-3 py-1.5 text-[9px] font-bold text-slate-650 backdrop-blur-sm shadow-sm select-none">
+        Click map to select custom GPS location
       </div>
     </div>
   );

@@ -1,72 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCivicStore } from '../../stores/civicStore';
-import { detectMunicipalityAndWard } from '../../utils/civicUtils';
 import { LeafletMap } from '../maps/LeafletMap';
-import AiImageScanner from '../../features/ai/AiImageScanner';
-import DuplicateChecker from '../../features/ai/DuplicateChecker';
-import type { ReportCategory } from '../../types';
-import { MapPin, Upload, Image as ImageIcon, Loader, Info } from 'lucide-react';
+import { detectMunicipalityAndWard, calculatePriority } from '../../utils/civicUtils';
 import { aiVerificationService } from '../../services/aiVerificationService';
-import type { ImageAnalysisResult } from '../../services/aiVerificationService';
+import { DuplicateChecker } from '../validation/DuplicateChecker';
+import { AiImageScanner } from '../validation/AiImageScanner';
+import type { ReportCategory, Report, GPSReading, ReportImage } from '../../types';
+import { Upload, MapPin, Loader, Info, Image as ImageIcon } from 'lucide-react';
 
-export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
+interface ReportFormProps {
+  onSuccess: () => void;
+}
+
+export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const { submitReport, reports, currentUser } = useCivicStore();
+
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [category, setCategory] = useState<ReportCategory>('Road Damage');
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [address, setAddress] = useState('');
-  const [muni, setMuni] = useState('');
-  const [ward, setWard] = useState<number>(1);
   const [imgUrl, setImgUrl] = useState('');
   const [aiVerified, setAiVerified] = useState(false);
-  const [showDuplicateOverlay, setShowDuplicateOverlay] = useState(false);
-  
-  // GPS Sampling states
+  const [trustScore, setTrustScore] = useState<number>(100);
+  const [aiAnalysisDetails, setAiAnalysisDetails] = useState<any>(null);
+
+  // Geolocation states
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [muni, setMuni] = useState('');
+  const [ward, setWard] = useState<number>(0);
+  const [address, setAddress] = useState('');
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [loadingGps, setLoadingGps] = useState(false);
   const [gpsSampleCount, setGpsSampleCount] = useState(0);
-  const [gpsAccuracy, setGpsAccuracy] = useState(0);
-  const [isLowAccuracyWarning, setIsLowAccuracyWarning] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
+  const [isLowAccuracyWarning, setIsLowAccuracyWarning] = useState(false);
 
-  // Trust Engine states
-  const [trustScore, setTrustScore] = useState(95);
-  const [aiAnalysisDetails, setAiAnalysisDetails] = useState<ImageAnalysisResult | null>(null);
+  // Duplicate Check trigger
+  const [showDuplicateOverlay, setShowDuplicateOverlay] = useState(false);
 
-  const handleMapClick = (lat: number, lng: number, accuracy: number = 2.5) => {
+  const handleMapClick = (lat: number, lng: number, accuracy: number = 2.0) => {
     setCoords({ lat, lng });
     setGpsAccuracy(accuracy);
     setIsLowAccuracyWarning(accuracy > 50);
 
-    const match = detectMunicipalityAndWard(lat, lng);
-    setMuni(match.municipalityId);
-    setWard(match.wardId);
-    setAddress(match.address);
-
-    const hasDuplicate = reports.some((r) => {
-      if (r.category !== category) return false;
-      const latDiff = Math.abs(r.latitude - lat);
-      const lngDiff = Math.abs(r.longitude - lng);
-      return latDiff < 0.005 && lngDiff < 0.005 && r.status !== 'Resolved' && r.status !== 'Closed';
-    });
-    setShowDuplicateOverlay(hasDuplicate);
+    const geoResult = detectMunicipalityAndWard(lat, lng);
+    setMuni(geoResult.municipalityName);
+    setWard(geoResult.wardId);
+    setAddress(geoResult.address);
+    setGpsError(null);
   };
 
   const handleAutofillGps = () => {
-    if (!navigator.geolocation) {
-      setGpsError('Geolocation is not supported by your browser.');
-      handleMapClick(28.067, 82.478, 120);
-      return;
-    }
-
     setLoadingGps(true);
     setGpsError(null);
     setGpsSampleCount(0);
     setIsLowAccuracyWarning(false);
 
-    const samples: { lat: number; lng: number; accuracy: number }[] = [];
-    let count = 0;
+    const samples: GPSReading[] = [];
     const maxSamples = 8;
+    let count = 0;
 
     const captureSample = () => {
       navigator.geolocation.getCurrentPosition(
@@ -118,20 +109,24 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
     captureSample();
   };
 
-  // Local File Upload Handler
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          setImgUrl(reader.result);
-          setAiVerified(false);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+
+    setAiVerified(false);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImgUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
+
+  useEffect(() => {
+    if (coords) {
+      // Trigger duplicate checklist overlay if report category or coordinates match closely
+      setShowDuplicateOverlay(true);
+    }
+  }, [category, coords]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,7 +145,6 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
       budgetEstimated: category === 'Emergency' ? 200000 : 45000,
       budgetSpent: 0,
       imageUrl: imgUrl || undefined,
-      // Pass raw payload structures so service formats it to database
       aiAnalysis: aiAnalysisDetails ? {
         ...aiAnalysisDetails,
         trustScore,
@@ -161,13 +155,31 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
   };
 
   return (
-    <form onSubmit={handleFormSubmit} className="space-y-4">
+    <form onSubmit={handleFormSubmit} className="space-y-4 font-sans text-slate-700 select-none">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-4">
-          <input type="text" required placeholder="Issue Title (e.g. Broken Streetlight)" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:border-blue-500 focus:outline-none" />
-          <textarea required placeholder="Describe the issue in detail..." value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:border-blue-500 focus:outline-none" />
+          <input 
+            type="text" 
+            required 
+            placeholder="Issue Title (e.g. Broken Streetlight)" 
+            value={title} 
+            onChange={(e) => setTitle(e.target.value)} 
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold placeholder-slate-400" 
+          />
+          <textarea 
+            required 
+            placeholder="Describe the issue in detail..." 
+            value={desc} 
+            onChange={(e) => setDesc(e.target.value)} 
+            rows={3} 
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold placeholder-slate-400" 
+          />
 
-          <select value={category} onChange={(e) => setCategory(e.target.value as ReportCategory)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:border-blue-500 focus:outline-none">
+          <select 
+            value={category} 
+            onChange={(e) => setCategory(e.target.value as ReportCategory)} 
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-750 font-bold focus:bg-white focus:outline-none"
+          >
             {['Road Damage', 'Potholes', 'Garbage', 'Water Supply', 'Drainage', 'Electricity', 'Street Lights', 'Environmental Issues', 'Public Safety', 'Infrastructure Problems', 'Other', 'Emergency'].map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
@@ -176,8 +188,8 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
           {/* Local File Selector & Remote URL Loader */}
           <div className="space-y-2">
             <div className="flex gap-2">
-              <label className="flex-1 flex items-center justify-center gap-2 bg-slate-900 border border-slate-800 border-dashed rounded-lg p-2.5 text-xs text-slate-400 hover:text-slate-200 cursor-pointer hover:border-blue-500/50 transition-colors">
-                <Upload className="w-4 h-4 text-blue-400" />
+              <label className="flex-1 flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 border-dashed rounded-xl p-3 text-xs text-slate-500 hover:text-slate-800 cursor-pointer hover:border-blue-500/50 transition-colors font-bold">
+                <Upload className="w-4 h-4 text-blue-600" />
                 <span>Upload Image File</span>
                 <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
               </label>
@@ -186,16 +198,16 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
                 type="button"
                 disabled={loadingGps}
                 onClick={handleAutofillGps}
-                className="bg-slate-800 text-slate-300 px-3 py-2.5 rounded-lg border border-slate-700 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50 min-w-[110px] justify-center"
+                className="bg-slate-100 text-slate-600 px-4 py-3 rounded-xl border border-slate-200 hover:bg-slate-200/80 text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 min-w-[110px] justify-center cursor-pointer"
               >
                 {loadingGps ? (
                   <>
-                    <Loader className="w-3.5 h-3.5 text-blue-400 animate-spin" />
+                    <Loader className="w-3.5 h-3.5 text-blue-600 animate-spin" />
                     <span>Sample {gpsSampleCount}/8</span>
                   </>
                 ) : (
                   <>
-                    <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                    <MapPin className="w-3.5 h-3.5 text-blue-600" />
                     <span>Use GPS</span>
                   </>
                 )}
@@ -203,23 +215,29 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
             </div>
 
             {gpsError && (
-              <div className="text-[10px] text-amber-400 bg-amber-950/20 border border-amber-900/30 px-3 py-2 rounded-lg leading-relaxed animate-pulse">
+              <div className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200/60 px-3.5 py-2.5 rounded-xl leading-relaxed">
                 ⚠️ {gpsError}
               </div>
             )}
 
             {isLowAccuracyWarning && (
-              <div className="text-[10px] text-amber-400 bg-amber-950/40 border border-amber-800/80 px-3.5 py-2.5 rounded-xl leading-relaxed flex items-start gap-2">
-                <Info className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+              <div className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200/80 px-3.5 py-2.5 rounded-xl leading-relaxed flex items-start gap-2 font-bold">
+                <Info className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <span className="font-bold">Low GPS Precision:</span> GPS accuracy is ±{gpsAccuracy.toFixed(1)}m. We recommend zooming in and double-clicking the map to manually verify the exact problem location.
+                  <span className="font-extrabold text-amber-800">Low GPS Precision:</span> GPS accuracy is ±{gpsAccuracy?.toFixed(1)}m. We recommend zooming in and clicking the map to manually verify the exact problem location.
                 </div>
               </div>
             )}
 
             <div className="flex items-center gap-2">
               <ImageIcon className="w-3.5 h-3.5 text-slate-500" />
-              <input type="text" placeholder="Or paste image URL link..." value={imgUrl.startsWith('data:') ? '' : imgUrl} onChange={(e) => { setImgUrl(e.target.value); setAiVerified(false); }} className="flex-1 bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none" />
+              <input 
+                type="text" 
+                placeholder="Or paste image URL link..." 
+                value={imgUrl.startsWith('data:') ? '' : imgUrl} 
+                onChange={(e) => { setImgUrl(e.target.value); setAiVerified(false); }} 
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-700 font-bold focus:bg-white focus:outline-none placeholder-slate-400" 
+              />
             </div>
           </div>
 
@@ -241,28 +259,42 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
         </div>
 
         <div className="space-y-3">
-          <div className="h-[250px] rounded-xl overflow-hidden border border-slate-800">
-            <LeafletMap reports={reports} onSelectCoords={(lat, lng) => handleMapClick(lat, lng, 2.0)} selectedCoords={coords} />
+          <div className="h-[250px] rounded-2xl overflow-hidden border border-slate-200">
+            <LeafletMap 
+              reports={reports} 
+              onSelectCoords={(lat, lng) => handleMapClick(lat, lng, 2.0)} 
+              selectedCoords={coords} 
+            />
           </div>
           {coords && (
-            <div className="bg-slate-900/40 border border-slate-800 p-3 rounded-lg text-xs space-y-1.5 font-mono text-slate-300">
-              <div className="flex justify-between">
+            <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-xs space-y-1.5 font-mono text-slate-650 font-bold">
+              <div className="flex justify-between border-b border-slate-100 pb-1 mb-1">
                 <span>📍 Lat/Lng: {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}</span>
                 <span className="text-slate-400">Accuracy: ±{gpsAccuracy ? gpsAccuracy.toFixed(1) : '2.0'}m</span>
               </div>
-              <div># Municipality: {muni.toUpperCase()}</div>
+              <div># Municipality: {muni}</div>
               <div># Ward Number: Ward {ward}</div>
-              <div>📮 Address: {address}</div>
+              <div className="leading-relaxed">Address: {address}</div>
             </div>
           )}
         </div>
       </div>
 
       {coords && showDuplicateOverlay && (
-        <DuplicateChecker category={category} latitude={coords.lat} longitude={coords.lng} onConfirmNew={() => setShowDuplicateOverlay(false)} onSupported={onSuccess} />
+        <DuplicateChecker 
+          category={category} 
+          latitude={coords.lat} 
+          longitude={coords.lng} 
+          onConfirmNew={() => setShowDuplicateOverlay(false)} 
+          onSupported={onSuccess} 
+        />
       )}
 
-      <button type="submit" disabled={!coords || (imgUrl && !aiVerified) || showDuplicateOverlay} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-800 disabled:text-slate-600 disabled:border-transparent font-semibold py-2.5 rounded-lg text-xs transition-colors shadow-glow text-white cursor-pointer">
+      <button 
+        type="submit" 
+        disabled={!coords || (imgUrl && !aiVerified) || showDuplicateOverlay} 
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-transparent font-bold py-2.5 rounded-xl text-xs transition-colors shadow-sm text-white cursor-pointer"
+      >
         Submit Report
       </button>
     </form>
