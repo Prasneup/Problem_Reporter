@@ -88,9 +88,9 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
         },
         (error) => {
           console.warn('GPS single sample request failed, collecting synthetic drift:', error);
-          // Drift mock around real coordinates to test smooth accuracy averaging
-          const baseLat = 28.0539;
-          const baseLng = 82.4082;
+          // Drift mock around Ghorahi Bazar coordinates to test smooth accuracy averaging
+          const baseLat = 28.062;
+          const baseLng = 82.484;
           const driftLat = (Math.random() - 0.5) * 0.0003;
           const driftLng = (Math.random() - 0.5) * 0.0003;
           samples.push({

@@ -162,8 +162,8 @@ export const aiVerificationService = {
       model: hasExif ? 'iPhone 15 Pro' : undefined,
       software: hasEditSoftware ? 'Adobe Photoshop CC' : undefined,
       dateTimeOriginal: hasExif ? new Date().toISOString() : undefined,
-      gpsLatitude: hasExif ? 28.0539 : undefined,
-      gpsLongitude: hasExif ? 82.4082 : undefined,
+      gpsLatitude: hasExif ? 28.062 : undefined,
+      gpsLongitude: hasExif ? 82.484 : undefined,
       isStripped,
       hasEditSoftware
     };
