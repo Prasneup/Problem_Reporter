@@ -51,6 +51,15 @@ function App() {
     };
   }, [loadInitialData, setCurrentUser]);
 
+  // Real-time polling to fetch updates from database (e.g. reports submitted by friends on other devices)
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      loadInitialData();
+    }, 6000);
+
+    return () => clearInterval(pollInterval);
+  }, [loadInitialData]);
+
   return (
     <BrowserRouter>
       <Routes>
