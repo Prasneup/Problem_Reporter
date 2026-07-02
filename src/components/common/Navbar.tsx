@@ -69,7 +69,7 @@ export const Navbar: React.FC = () => {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-3 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-4 z-50 max-h-96 overflow-y-auto">
+            <div className="absolute right-[-12px] sm:right-0 mt-3 w-[calc(100vw-2.5rem)] sm:w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-4 z-50 max-h-96 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
                 <h4 className="text-xs font-bold text-slate-200">Alerts & Logs</h4>
                 <span className="text-[9px] text-slate-500">{activeNotifications.length} unread</span>

@@ -18,13 +18,15 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
-          try {
-            const profile = await authService.getProfile(session.user.id);
-            setCurrentUser(profile);
-            loadInitialData();
-          } catch (err) {
-            console.error('Failed to load user profile on auth change:', err);
-          }
+          setTimeout(async () => {
+            try {
+              const profile = await authService.getProfile(session.user.id);
+              setCurrentUser(profile);
+              loadInitialData();
+            } catch (err) {
+              console.error('Failed to load user profile on auth change:', err);
+            }
+          }, 0);
         }
       }
     );

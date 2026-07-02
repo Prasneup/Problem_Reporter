@@ -5,9 +5,14 @@ import { MUNICIPALITIES } from '../constants/municipalities';
 // Caches for DB mappings: name -> id
 const municipalityIdCache: Record<string, string> = {};
 const wardIdCache: Record<string, Record<number, string>> = {};
+let mappingPromise: Promise<void> | null = null;
 
 async function fetchDbMappings() {
-  const { data: munis } = await supabase.from('municipalities').select('id, name');
+  console.log("DEBUG: fetchDbMappings started");
+  const { data: munis, error: muniError } = await supabase.from('municipalities').select('id, name');
+  if (muniError) {
+    console.error("DEBUG: fetchDbMappings municipalities query error:", muniError);
+  }
   if (munis) {
     munis.forEach(m => {
       // Find constant key (e.g. "ghorahi" from "Ghorahi Sub-Metropolitan City")
@@ -16,7 +21,10 @@ async function fetchDbMappings() {
     });
   }
 
-  const { data: wards } = await supabase.from('wards').select('id, municipality_id, ward_number');
+  const { data: wards, error: wardError } = await supabase.from('wards').select('id, municipality_id, ward_number');
+  if (wardError) {
+    console.error("DEBUG: fetchDbMappings wards query error:", wardError);
+  }
   if (wards) {
     wards.forEach(w => {
       if (!wardIdCache[w.municipality_id]) {
@@ -25,13 +33,26 @@ async function fetchDbMappings() {
       wardIdCache[w.municipality_id][w.ward_number] = w.id;
     });
   }
+  console.log("DEBUG: fetchDbMappings completed successfully");
 }
 
 export const authService = {
   async ensureMappings() {
-    if (Object.keys(municipalityIdCache).length === 0) {
-      await fetchDbMappings();
+    if (Object.keys(municipalityIdCache).length > 0) return;
+
+    if (mappingPromise) {
+      console.log("DEBUG: ensureMappings waiting on existing in-flight mappingPromise");
+      return mappingPromise;
     }
+
+    console.log("DEBUG: ensureMappings starting new mappingPromise");
+    mappingPromise = fetchDbMappings().catch(err => {
+      console.error("DEBUG: fetchDbMappings failed:", err);
+      mappingPromise = null;
+      throw err;
+    });
+
+    return mappingPromise;
   },
 
   getDbMuniId(localMuniId: string): string | undefined {
@@ -168,28 +189,73 @@ export const authService = {
   },
 
   async signIn(email: string, password: string): Promise<UserProfile> {
+    console.log("DEBUG: signIn started for:", email);
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password
     });
+    console.log("DEBUG: signInWithPassword resolved:", JSON.stringify({ authData, authError }, null, 2));
 
     if (authError || !authData.user) {
       throw authError || new Error('Authentication failed.');
     }
 
+    console.log("DEBUG: calling getProfile for user:", authData.user.id);
     return await this.getProfile(authData.user.id);
   },
 
   async getProfile(userId: string): Promise<UserProfile> {
+    console.log("DEBUG: getProfile started for user ID:", userId);
     await this.ensureMappings();
+    console.log("DEBUG: ensureMappings completed inside getProfile");
 
+    console.log("DEBUG: fetching profiles row from database for user ID:", userId);
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('*, municipalities(name), wards(ward_number)')
       .eq('id', userId)
       .single();
+    console.log("DEBUG: profiles query returned:", JSON.stringify({ profile, error }, null, 2));
 
     if (error || !profile) {
+      if (error && (error.code === 'PGRST116' || error.message?.includes('0 rows'))) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const fallbackProfile = {
+              id: userId,
+              name: user.user_metadata?.name || user.email?.split('@')[0] || 'Citizen',
+              email: user.email || '',
+              phone: user.user_metadata?.phone || '',
+              role: user.user_metadata?.role || 'Citizen',
+              municipality_id: null,
+              ward_id: null,
+              reputation_points: 0,
+              badge_ids: []
+            };
+
+            const { error: insertErr } = await supabase.from('profiles').insert(fallbackProfile);
+            if (!insertErr) {
+              return {
+                id: userId,
+                name: fallbackProfile.name,
+                email: fallbackProfile.email,
+                phone: fallbackProfile.phone,
+                role: fallbackProfile.role as UserRole,
+                municipalityId: undefined,
+                wardId: undefined,
+                reputationPoints: 0,
+                badgeIds: [],
+                createdAt: new Date().toISOString()
+              };
+            } else {
+              console.error('Insert fallback profile error:', insertErr);
+            }
+          }
+        } catch (createErr) {
+          console.error('Failed to auto-create fallback profile:', createErr);
+        }
+      }
       throw error || new Error('Profile not found.');
     }
 

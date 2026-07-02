@@ -5,7 +5,7 @@ import { LeafletMap } from '../maps/LeafletMap';
 import AiImageScanner from '../../features/ai/AiImageScanner';
 import DuplicateChecker from '../../features/ai/DuplicateChecker';
 import type { ReportCategory } from '../../types';
-import { MapPin, Upload, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Upload, Image as ImageIcon, Loader } from 'lucide-react';
 
 export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
   const { submitReport, reports } = useCivicStore();
@@ -19,6 +19,8 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
   const [imgUrl, setImgUrl] = useState('');
   const [aiVerified, setAiVerified] = useState(false);
   const [showDuplicateOverlay, setShowDuplicateOverlay] = useState(false);
+  const [loadingGps, setLoadingGps] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
 
   const handleMapClick = (lat: number, lng: number) => {
     setCoords({ lat, lng });
@@ -26,11 +28,46 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
     setMuni(match.municipalityId);
     setWard(match.wardId);
     setAddress(match.address);
-    setShowDuplicateOverlay(true);
+
+    const hasDuplicate = reports.some((r) => {
+      if (r.category !== category) return false;
+      const latDiff = Math.abs(r.latitude - lat);
+      const lngDiff = Math.abs(r.longitude - lng);
+      return latDiff < 0.005 && lngDiff < 0.005 && r.status !== 'Resolved' && r.status !== 'Closed';
+    });
+    setShowDuplicateOverlay(hasDuplicate);
   };
 
   const handleAutofillGps = () => {
-    handleMapClick(28.067, 82.478); // Ghorahi Ward 15 default coordinates
+    if (!navigator.geolocation) {
+      setGpsError('Geolocation is not supported by your browser.');
+      handleMapClick(28.067, 82.478);
+      return;
+    }
+
+    setLoadingGps(true);
+    setGpsError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        handleMapClick(latitude, longitude);
+        setLoadingGps(false);
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        let errMsg = 'Failed to retrieve location.';
+        if (error.code === error.PERMISSION_DENIED) {
+          errMsg = 'Location permission denied. Please allow location access in your browser settings.';
+        } else if (error.code === error.TIMEOUT) {
+          errMsg = 'Location request timed out.';
+        }
+        setGpsError(`${errMsg} Using default location (Ghorahi).`);
+        handleMapClick(28.067, 82.478); // Fallback
+        setLoadingGps(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   };
 
   // Local File Upload Handler
@@ -90,11 +127,26 @@ export const ReportForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
                 <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
               </label>
 
-              <button type="button" onClick={handleAutofillGps} className="bg-slate-800 text-slate-300 px-3 py-2.5 rounded-lg border border-slate-700 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-blue-400" />
-                Use GPS
+              <button
+                type="button"
+                disabled={loadingGps}
+                onClick={handleAutofillGps}
+                className="bg-slate-800 text-slate-300 px-3 py-2.5 rounded-lg border border-slate-700 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {loadingGps ? (
+                  <Loader className="w-3.5 h-3.5 text-blue-400 animate-spin" />
+                ) : (
+                  <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                )}
+                <span>{loadingGps ? 'Locating...' : 'Use GPS'}</span>
               </button>
             </div>
+
+            {gpsError && (
+              <div className="text-[10px] text-amber-400 bg-amber-950/20 border border-amber-900/30 px-3 py-2 rounded-lg leading-relaxed animate-pulse">
+                ⚠️ {gpsError}
+              </div>
+            )}
 
             <div className="flex items-center gap-2">
               <ImageIcon className="w-3.5 h-3.5 text-slate-500" />

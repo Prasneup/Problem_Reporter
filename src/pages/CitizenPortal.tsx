@@ -5,7 +5,12 @@ import { ReportForm } from '../components/forms/ReportForm';
 import { formatNepalTime } from '../utils/civicUtils';
 import { ThumbsUp, MessageSquare, AlertTriangle, CheckCircle, RefreshCw, User } from 'lucide-react';
 
-export const CitizenPortal: React.FC<{ activeView: string }> = ({ activeView }) => {
+interface CitizenPortalProps {
+  activeView: string;
+  setCurrentTab: (tab: string) => void;
+}
+
+export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCurrentTab }) => {
   const { reports, comments, addComment, supportReport, currentUser, reopenReport } = useCivicStore();
   const [selectedReportId, setSelectedReportId] = useState<string | undefined>(undefined);
   const [newCommentText, setNewCommentText] = useState('');
@@ -29,7 +34,7 @@ export const CitizenPortal: React.FC<{ activeView: string }> = ({ activeView }) 
       <div className="glass-panel p-6">
         <h2 className="text-base font-bold text-slate-100 mb-1">Submit Civic Infrastructure Problem</h2>
         <p className="text-xs text-slate-400 mb-6">Select a category, point the location on the map, and upload an image to alert the ward office.</p>
-        <ReportForm onSuccess={() => window.location.reload()} />
+        <ReportForm onSuccess={() => setCurrentTab('my-reports')} />
       </div>
     );
   }

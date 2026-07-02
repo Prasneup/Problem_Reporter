@@ -57,7 +57,7 @@ export const AppLayout: React.FC = () => {
       case 'citizen-dash':
       case 'report-form':
       case 'my-reports':
-        return <CitizenPortal activeView={currentTab} />;
+        return <CitizenPortal activeView={currentTab} setCurrentTab={setCurrentTab} />;
       case 'verifier-dash':
       case 'verifier-queue':
         return <VerifierPortal activeView={currentTab} />;

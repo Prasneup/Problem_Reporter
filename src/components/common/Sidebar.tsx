@@ -107,8 +107,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
           <Link to="/contact" className="hover:underline">Contact Support</Link>
         </div>
         <button
-          onClick={async () => {
-            await signOut();
+          onClick={() => {
+            // Trigger signout in background without blocking redirection
+            signOut().catch((err) => console.error("Background signout error:", err));
+            // Redirect immediately
             window.location.href = '/login';
           }}
           className="w-full text-center py-2 bg-red-950/20 hover:bg-red-950/40 border border-red-900/30 hover:border-red-900/50 text-red-400 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
