@@ -3,10 +3,9 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useCivicStore } from '../../stores/civicStore';
 import {
-  LayoutDashboard, Database, ClipboardList,
-  Settings, Users, BarChart3, AlertTriangle, Coins
+  LayoutDashboard, ClipboardList, AlertTriangle, Bell, Map,
+  BarChart3, Users, User, HelpCircle, LogOut, CheckSquare
 } from 'lucide-react';
-
 
 interface SidebarProps {
   currentTab: string;
@@ -19,18 +18,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
   const role = currentUser.role;
 
   const getNavItems = () => {
-    const common = [
-      { id: 'transparency', label: t('openData') + ' (Public)', icon: Database },
-    ];
+    // Standard dashboard links based on Bhoju Chaudhary (Citizen) user experience shown in screenshot
+    if (role === 'Citizen') {
+      return [
+        { id: 'citizen-dash', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'report-form', label: 'Report an Issue', icon: AlertTriangle },
+        { id: 'my-reports', label: 'My Reports', icon: ClipboardList },
+        { id: 'active-reports', label: 'Active Reports', icon: CheckSquare },
+        { id: 'alerts', label: 'Alerts & Updates', icon: Bell },
+        { id: 'map-view', label: 'Map View', icon: Map },
+        { id: 'statistics', label: 'Statistics', icon: BarChart3 },
+        { id: 'community', label: 'Community', icon: Users },
+        { id: 'profile', label: 'Profile', icon: User },
+        { id: 'help', label: 'Help & Support', icon: HelpCircle }
+      ];
+    }
 
+    // Nav items fallback for other administrative roles
+    const common = [{ id: 'transparency', label: t('openData') + ' (Public)', icon: Map }];
     switch (role) {
-      case 'Citizen':
-        return [
-          { id: 'citizen-dash', label: t('dashboard'), icon: LayoutDashboard },
-          { id: 'report-form', label: 'Report New Issue', icon: AlertTriangle },
-          { id: 'my-reports', label: 'My Reports', icon: ClipboardList },
-          ...common
-        ];
       case 'Community Verifier':
         return [
           { id: 'verifier-dash', label: 'Verifier Dashboard', icon: LayoutDashboard },
@@ -52,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
       case 'Municipality Officer':
         return [
           { id: 'muni-dash', label: 'Muni Dashboard', icon: LayoutDashboard },
-          { id: 'muni-budgets', label: 'Budget Tracker', icon: Coins },
+          { id: 'muni-budgets', label: 'Budget Tracker', icon: BarChart3 },
           ...common
         ];
       case 'District Administrator':
@@ -65,7 +71,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
         return [
           { id: 'super-dash', label: 'Admin Dashboard', icon: LayoutDashboard },
           { id: 'super-users', label: 'Manage Users', icon: Users },
-          { id: 'super-audits', label: 'Audit Logs', icon: Settings },
           ...common
         ];
       default:
@@ -76,52 +81,51 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
   const navItems = getNavItems();
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen fixed left-0 top-0 pt-16 z-30">
-      <div className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-        <div className="text-[10px] uppercase font-bold tracking-widest text-slate-500 px-3 mb-2">
-          Navigation Portal
-        </div>
+    <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col h-screen fixed left-0 top-0 pt-16 z-30 font-sans">
+      <div className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
+          
           const isActive = currentTab === item.id;
+          
           return (
             <button
               key={item.id}
               onClick={() => setCurrentTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${isActive
-                  ? 'bg-blue-600/10 text-blue-400 border border-blue-600/30 font-semibold'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-transparent'
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${isActive
+                  ? 'bg-blue-50 text-blue-600 font-bold'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
                 }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
+              <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
               <span>{item.label}</span>
             </button>
           );
         })}
       </div>
 
-      <div className="p-4 border-t border-slate-800 space-y-2">
-        <div className="flex justify-around text-[10px] text-blue-400">
+      <div className="p-4 border-t border-slate-100 space-y-2">
+        <div className="flex justify-around text-[10px] font-semibold text-blue-500">
           <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
-          <span className="text-slate-700">•</span>
+          <span className="text-slate-300">•</span>
           <Link to="/contact" className="hover:underline">Contact Support</Link>
         </div>
         <button
           onClick={() => {
-            // Trigger signout in background without blocking redirection
             signOut().catch((err) => console.error("Background signout error:", err));
-            // Redirect immediately
             window.location.href = '/login';
           }}
-          className="w-full text-center py-2 bg-red-950/20 hover:bg-red-950/40 border border-red-900/30 hover:border-red-900/50 text-red-400 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+          className="w-full text-center py-2 bg-rose-50 hover:bg-rose-100/80 border border-rose-100 text-rose-600 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
         >
-          Sign Out
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Sign Out</span>
         </button>
-        <div className="text-[9px] text-slate-600 font-mono text-center">
-          Dang District, Nepal v1.0.0
+        <div className="text-[9px] text-slate-400 font-mono text-center font-semibold">
+          Ghorahi, Dang District, Nepal
         </div>
       </div>
     </aside>
   );
 };
+
 export default Sidebar;

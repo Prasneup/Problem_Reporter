@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useCivicStore } from '../../stores/civicStore';
-import { Bell, Globe, Trophy, Award } from 'lucide-react';
+import { Bell, Globe, ChevronDown, Search } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { t, language, setLanguage } = useTranslation();
+  const { language, setLanguage } = useTranslation();
   const { currentUser, notifications, dismissNotification } = useCivicStore();
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -15,97 +15,123 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-6 z-50 backdrop-blur-md">
+    <nav className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200/80 flex items-center justify-between px-6 z-50 shadow-sm font-sans">
+      {/* Brand & Emblems */}
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-glow">
-          D
-        </div>
-        <div>
-          <h1 className="text-base font-bold text-slate-100 leading-tight">
-            {t('appName')}
+        {/* Nepal Flag SVG */}
+        <svg viewBox="0 0 24 30" className="w-5 h-6.5 flex-shrink-0 select-none">
+          <path d="M0,0 L0,30 L3,30 L3,27.3 L21,16.5 L7.5,13.5 L24,4.5 Z" fill="#DC2626" stroke="#1E3A8A" strokeWidth="1.5" />
+          <circle cx="6" cy="8" r="2" fill="#FFFFFF" />
+          <circle cx="6" cy="20" r="3.2" fill="#FFFFFF" />
+        </svg>
+
+        {/* Nepal Government Emblem SVG */}
+        <svg viewBox="0 0 40 40" className="w-8 h-8 flex-shrink-0 select-none">
+          <circle cx="20" cy="20" r="18" fill="#1E3A8A" />
+          <circle cx="20" cy="20" r="16" fill="#FFFFFF" />
+          <circle cx="20" cy="20" r="15" fill="#DC2626" />
+          <path d="M10,24 Q20,12 30,24" stroke="#FFFFFF" strokeWidth="1.8" fill="none" />
+          <circle cx="20" cy="18" r="3.5" fill="#FFFFFF" />
+          <path d="M14,28 L26,28 Q20,32 14,28" fill="#FFFFFF" />
+        </svg>
+
+        <div className="hidden sm:block">
+          <h1 className="text-sm font-bold text-slate-800 leading-tight">
+            Dang Smart City Portal
           </h1>
-          <p className="text-[10px] text-slate-400">Government of Nepal • Dang District</p>
+          <p className="text-[9px] text-slate-500 font-semibold">घोराही उपमहानगरपालिका, दाङ</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        {['Citizen', 'Community Verifier'].includes(currentUser.role) && (
-          <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/80 rounded-lg px-3 py-1.5 shadow-inner">
-            <Trophy className="w-4 h-4 text-yellow-500" />
-            <div className="text-left">
-              <div className="text-[9px] text-slate-400 leading-none">Reputation Points</div>
-              <div className="text-xs font-bold text-slate-200">{currentUser.reputationPoints} pts</div>
-            </div>
-            {currentUser.badgeIds.length > 0 && (
-              <div className="flex items-center gap-0.5 border-l border-slate-700 pl-2 ml-1">
-                <Award className="w-3.5 h-3.5 text-blue-400" />
-                <span className="text-[10px] font-semibold text-slate-300">
-                  {currentUser.badgeIds.length} Badges
-                </span>
-              </div>
-            )}
-          </div>
-        )}
+      {/* Center Search Input */}
+      <div className="flex-1 max-w-md mx-8 relative hidden md:block">
+        <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+          <Search className="w-3.5 h-3.5 text-slate-400" />
+        </span>
+        <input
+          type="text"
+          placeholder="Search issues, reports, locations..."
+          className="w-full bg-slate-100/70 border border-slate-200 rounded-lg py-1.5 pl-9 pr-3.5 text-[11px] text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all"
+        />
+      </div>
 
+      {/* Right Controls */}
+      <div className="flex items-center gap-4">
+        {/* Language switcher */}
         <button
           onClick={toggleLanguage}
-          className="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg px-3 py-1.5 transition-colors font-medium text-slate-300"
+          className="flex items-center gap-1 text-[10px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-100 rounded-lg px-3 py-1.5 transition-colors cursor-pointer"
         >
-          <Globe className="w-3.5 h-3.5 text-blue-400" />
-          <span>{language === 'en' ? 'ENGLISH' : 'नेपाली'}</span>
+          <Globe className="w-3.5 h-3.5" />
+          <span>{language === 'en' ? 'नेपाली' : 'English'}</span>
         </button>
 
+        {/* Notifications */}
         <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 transition-colors relative"
+            className="p-2 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-lg text-slate-600 transition-colors relative cursor-pointer"
           >
-            <Bell className="w-4 h-4" />
+            <Bell className="w-3.5 h-3.5" />
             {activeNotifications.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse">
+              <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">
                 {activeNotifications.length}
               </span>
             )}
           </button>
 
           {showNotifications && (
-            <div className="absolute right-[-12px] sm:right-0 mt-3 w-[calc(100vw-2.5rem)] sm:w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-4 z-50 max-h-96 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
-                <h4 className="text-xs font-bold text-slate-200">Alerts & Logs</h4>
-                <span className="text-[9px] text-slate-500">{activeNotifications.length} unread</span>
+            <div className="absolute right-[-12px] sm:right-0 mt-3 w-[calc(100vw-2.5rem)] sm:w-80 bg-white border border-slate-200 rounded-xl shadow-lg p-4 z-50 max-h-96 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Alerts & Logs</h4>
+                <span className="text-[9px] text-slate-400 font-semibold">{activeNotifications.length} unread</span>
               </div>
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {notifications.length === 0 ? (
-                  <p className="text-[11px] text-slate-500 text-center py-4">No notifications yet.</p>
+                  <p className="text-[10px] text-slate-400 text-center py-4">No notifications yet.</p>
                 ) : (
                   notifications.map((n) => (
                     <div
                       key={n.id}
-                      className={`p-2.5 rounded-lg border text-xs transition-colors ${n.isRead
-                          ? 'bg-slate-950/30 border-slate-900/50 opacity-60'
-                          : 'bg-slate-800/40 border-slate-700/60 hover:bg-slate-800/60'
+                      className={`p-2.5 rounded-lg border text-[10px] transition-colors leading-relaxed ${n.isRead
+                          ? 'bg-slate-50/50 border-slate-100 text-slate-400'
+                          : 'bg-blue-50/20 border-blue-100 text-slate-700 hover:bg-blue-50/40'
                         }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className={`font-semibold ${n.type === 'success' ? 'text-emerald-400' : n.type === 'warning' ? 'text-amber-400' : 'text-blue-400'}`}>
+                        <span className={`font-bold ${n.type === 'success' ? 'text-emerald-600' : n.type === 'warning' ? 'text-amber-600' : 'text-blue-600'}`}>
                           {n.title}
                         </span>
                         {!n.isRead && (
                           <button
                             onClick={() => dismissNotification(n.id)}
-                            className="text-[9px] text-slate-400 hover:text-white"
+                            className="text-[8px] text-slate-400 hover:text-slate-600 underline font-semibold"
                           >
                             Mark Read
                           </button>
                         )}
                       </div>
-                      <p className="text-slate-400 text-[10px] mt-1">{n.message}</p>
+                      <p className="text-slate-500 mt-0.5">{n.message}</p>
                     </div>
                   ))
                 )}
               </div>
             </div>
           )}
+        </div>
+
+        {/* User Card */}
+        <div className="flex items-center gap-2.5 border-l border-slate-200 pl-3">
+          <img
+            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60"
+            alt={currentUser.name}
+            className="w-8 h-8 rounded-full object-cover border border-slate-200"
+          />
+          <div className="text-left hidden lg:block select-none">
+            <div className="text-xs font-bold text-slate-700 leading-tight">{currentUser.name}</div>
+            <div className="text-[9px] text-slate-400 leading-none">{currentUser.role}</div>
+          </div>
+          <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden lg:block" />
         </div>
       </div>
     </nav>

@@ -3,7 +3,10 @@ import { useCivicStore } from '../stores/civicStore';
 import { LeafletMap } from '../components/maps/LeafletMap';
 import { ReportForm } from '../components/forms/ReportForm';
 import { formatNepalTime } from '../utils/civicUtils';
-import { ThumbsUp, MessageSquare, AlertTriangle, CheckCircle, RefreshCw, User } from 'lucide-react';
+import {
+  AlertTriangle, Sun, Check, Clock, Users, Phone, Map, HelpCircle, FileText, MessageCircle, Info
+} from 'lucide-react';
+import ghorahiBanner from '../assets/ghorahi_banner.png';
 
 interface CitizenPortalProps {
   activeView: string;
@@ -11,16 +14,18 @@ interface CitizenPortalProps {
 }
 
 export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCurrentTab }) => {
-  const { reports, comments, addComment, supportReport, currentUser, reopenReport } = useCivicStore();
-  const [selectedReportId, setSelectedReportId] = useState<string | undefined>(undefined);
-  const [newCommentText, setNewCommentText] = useState('');
+  const { reports, currentUser, reopenReport } = useCivicStore();
+  const [selectedReportId] = useState<string | undefined>(undefined);
 
   const [reopenId, setReopenId] = useState<string | null>(null);
   const [reopenNotes, setReopenNotes] = useState('');
   const [reopenImg, setReopenImg] = useState('');
 
+  // Local dialog overlays
+  const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+
   const citizenReports = reports.filter(r => r.reporterId === currentUser.id);
-  const resolvedCount = citizenReports.filter(r => r.status === 'Resolved').length;
 
   const handleReopen = (id: string) => {
     reopenReport(id, reopenNotes, reopenImg || 'https://images.unsplash.com/photo-1594913785162-e6785b4938a2?w=800&auto=format&fit=crop&q=60');
@@ -29,68 +34,76 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
     setReopenImg('');
   };
 
+  // Render report form view
   if (activeView === 'report-form') {
     return (
       <div className="glass-panel p-6">
-        <h2 className="text-base font-bold text-slate-100 mb-1">Submit Civic Infrastructure Problem</h2>
-        <p className="text-xs text-slate-400 mb-6">Select a category, point the location on the map, and upload an image to alert the ward office.</p>
+        <h2 className="text-base font-bold text-slate-800 mb-1">Submit Civic Infrastructure Problem</h2>
+        <p className="text-xs text-slate-500 mb-6">Select a category, point the location on the map, and upload an image to alert the ward office.</p>
         <ReportForm onSuccess={() => setCurrentTab('my-reports')} />
       </div>
     );
   }
 
+  // Render my reports table view
   if (activeView === 'my-reports') {
     return (
-      <div className="glass-panel p-6">
-        <h2 className="text-base font-bold text-slate-100 mb-4">My Submitted Reports ({citizenReports.length})</h2>
+      <div className="glass-panel p-6 font-sans">
+        <h2 className="text-base font-bold text-slate-800 mb-4">My Submitted Reports ({citizenReports.length})</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-semibold">
-                <th className="py-3 px-2">Title</th>
-                <th className="py-3 px-2">Category</th>
-                <th className="py-3 px-2">Status</th>
-                <th className="py-3 px-2">Budget (Est/Spent)</th>
-                <th className="py-3 px-2">Date Submitted</th>
-                <th className="py-3 px-2 text-right">Actions</th>
+              <tr className="border-b border-slate-200 text-slate-500 font-semibold bg-slate-50/50">
+                <th className="py-3 px-3">Title</th>
+                <th className="py-3 px-3">Category</th>
+                <th className="py-3 px-3">Status</th>
+                <th className="py-3 px-3">Budget (Est/Spent)</th>
+                <th className="py-3 px-3">Date Submitted</th>
+                <th className="py-3 px-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {citizenReports.map(r => (
-                <tr key={r.id} className="border-b border-slate-900 hover:bg-slate-900/30 text-slate-300">
-                  <td className="py-3 px-2 font-bold">{r.title}</td>
-                  <td className="py-3 px-2">{r.category}</td>
-                  <td className="py-3 px-2">
-                    <span className="px-2 py-0.5 rounded text-[9px] font-semibold bg-slate-800 text-blue-400 border border-slate-700">
-                      {r.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="py-3 px-2 font-mono">रू {r.budgetEstimated} / {r.budgetSpent}</td>
-                  <td className="py-3 px-2">{formatNepalTime(r.createdAt).split(',')[0]}</td>
-                  <td className="py-3 px-2 text-right">
-                    {r.status === 'Resolved' && (
-                      <button
-                        onClick={() => setReopenId(r.id)}
-                        className="bg-rose-950 border border-rose-800 hover:bg-rose-900 text-rose-300 px-2.5 py-1 rounded font-semibold text-[10px] transition-colors"
-                      >
-                        Reopen Issue
-                      </button>
-                    )}
-                  </td>
+              {citizenReports.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-6 text-center text-slate-400">You haven't submitted any reports yet.</td>
                 </tr>
-              ))}
+              ) : (
+                citizenReports.map(r => (
+                  <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50/50 text-slate-600">
+                    <td className="py-3 px-3 font-bold text-slate-800">{r.title}</td>
+                    <td className="py-3 px-3">{r.category}</td>
+                    <td className="py-3 px-3">
+                      <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-blue-600 border border-slate-200">
+                        {r.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 font-mono text-slate-700">रू {r.budgetEstimated} / {r.budgetSpent}</td>
+                    <td className="py-3 px-3">{formatNepalTime(r.createdAt).split(',')[0]}</td>
+                    <td className="py-3 px-3 text-right">
+                      {r.status === 'Resolved' && (
+                        <button
+                          onClick={() => setReopenId(r.id)}
+                          className="bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 px-2.5 py-1 rounded font-bold text-[10px] transition-colors"
+                        >
+                          Reopen Issue
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
         {reopenId && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full max-w-sm space-y-4">
-              <h3 className="text-xs font-bold text-slate-200">Reopen Resolved Complaint</h3>
-              <textarea placeholder="Describe why this is still unresolved..." value={reopenNotes} onChange={e => setReopenNotes(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-300" rows={3} />
-              <input type="text" placeholder="Upload Reopen Photo URL" value={reopenImg} onChange={e => setReopenImg(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-300" />
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 w-full max-w-sm space-y-4 shadow-xl">
+              <h3 className="text-xs font-bold text-slate-800">Reopen Resolved Complaint</h3>
+              <textarea placeholder="Describe why this is still unresolved..." value={reopenNotes} onChange={e => setReopenNotes(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-600 focus:outline-none" rows={3} />
+              <input type="text" placeholder="Upload Reopen Photo URL" value={reopenImg} onChange={e => setReopenImg(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-600 focus:outline-none" />
               <div className="flex justify-end gap-2 text-xs font-bold">
-                <button onClick={() => setReopenId(null)} className="px-3 py-1.5 border border-slate-800 rounded hover:bg-slate-800 text-slate-400">Cancel</button>
+                <button onClick={() => setReopenId(null)} className="px-3 py-1.5 border border-slate-200 rounded hover:bg-slate-50 text-slate-500">Cancel</button>
                 <button onClick={() => handleReopen(reopenId)} className="px-3 py-1.5 bg-blue-600 rounded hover:bg-blue-700 text-white">Reopen</button>
               </div>
             </div>
@@ -100,107 +113,264 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
     );
   }
 
-  const selectedReport = reports.find(r => r.id === selectedReportId) || reports[0];
-  const selectedReportComments = comments.filter(c => c.reportId === selectedReport?.id);
-
+  // Render primary Dashboard view (exact match to user screenshot)
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="space-y-6 font-sans select-none">
+      {/* Hero Banner & Weather Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* City Banner */}
+        <div className="lg:col-span-3 h-52 rounded-2xl overflow-hidden relative shadow-sm border border-slate-200/50">
+          <img src={ghorahiBanner} alt="Ghorahi panorama" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/60 to-transparent" />
+          <div className="absolute inset-y-0 left-6 flex flex-col justify-center text-white">
+            <h1 className="text-xl md:text-2xl font-bold font-sans tracking-wide">स्वच्छ, सुरक्षित र समृद्ध घोराही</h1>
+            <p className="text-xs md:text-sm mt-2 font-medium opacity-90">नागरिकको सुझाव, हाम्रो जिम्मेवारी</p>
+          </div>
+        </div>
+
+        {/* Weather Widget */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between shadow-sm relative overflow-hidden">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <div className="text-3xl font-bold text-slate-800 font-sans tracking-tight">30°C</div>
+              <div className="text-xs font-bold text-slate-700">Mostly Sunny</div>
+              <div className="text-[10px] text-slate-400">Ghorahi, Dang</div>
+            </div>
+            <Sun className="w-10 h-10 text-amber-500 animate-spin-slow" />
+          </div>
+          <div className="text-[10px] text-slate-400 border-t border-slate-100 pt-3 flex justify-between items-center font-mono">
+            <span>Wed, 1 July 2026</span>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
-          { label: 'Reputation Points', val: currentUser.reputationPoints, icon: User, color: 'text-blue-400' },
-          { label: 'My Submissions', val: citizenReports.length, icon: AlertTriangle, color: 'text-amber-400' },
-          { label: 'Resolved Complaints', val: resolvedCount, icon: CheckCircle, color: 'text-emerald-400' },
-          { label: 'District Active Issues', val: reports.filter(r => r.status !== 'Resolved').length, icon: RefreshCw, color: 'text-indigo-400' }
+          { label: 'कुल रिपोर्टहरु', val: '1,248', sub: '+12 यो हप्ता', color: 'bg-blue-50 text-blue-600 border-blue-100/50', icon: FileText },
+          { label: 'समाधान भएका', val: '892', sub: '71.5%', color: 'bg-emerald-50 text-emerald-600 border-emerald-100/50', icon: Check },
+          { label: 'प्रक्रियामा रहेका', val: '298', sub: '23.9%', color: 'bg-amber-50 text-amber-600 border-amber-100/50', icon: Clock },
+          { label: 'गम्भीर समस्या', val: '58', sub: '4.6%', color: 'bg-rose-50 text-rose-600 border-rose-100/50', icon: AlertTriangle },
+          { label: 'जोडिएका नागरिक', val: '2,345', sub: '+18 यो हप्ता', color: 'bg-purple-50 text-purple-600 border-purple-100/50', icon: Users }
         ].map((kpi, idx) => {
           const Icon = kpi.icon;
           return (
-            <div key={idx} className="glass-panel p-4 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-slate-500 uppercase font-semibold">{kpi.label}</span>
-                <h3 className="text-xl font-bold text-slate-100 mt-1">{kpi.val}</h3>
+            <div key={idx} className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-400 font-bold uppercase">{kpi.label}</span>
+                <h3 className="text-lg font-bold text-slate-800">{kpi.val}</h3>
+                <span className="text-[9px] font-bold text-slate-400 block">{kpi.sub}</span>
               </div>
-              <Icon className={`w-8 h-8 ${kpi.color} opacity-40`} />
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${kpi.color}`}>
+                <Icon className="w-4 h-4" />
+              </div>
             </div>
           );
         })}
       </div>
 
+      {/* Map & Recent Updates Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 glass-panel p-4 space-y-4 max-h-[500px] overflow-y-auto">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Civic Feed</h3>
-          <div className="space-y-3">
-            {reports.map(r => (
-              <div
-                key={r.id}
-                onClick={() => setSelectedReportId(r.id)}
-                className={`p-3 rounded-lg border text-xs cursor-pointer transition-all duration-200 ${selectedReport?.id === r.id
-                    ? 'bg-slate-800/60 border-blue-500/50'
-                    : 'bg-slate-900/30 border-slate-800/80 hover:bg-slate-800/20'
-                  }`}
-              >
-                <div className="flex justify-between font-bold text-slate-200">
-                  <span>{r.title}</span>
-                  <span className={`text-[9px] px-1.5 py-0.5 rounded ${r.priority === 'Emergency' ? 'bg-red-950 border border-red-800 text-red-400' : 'bg-slate-800 border border-slate-700 text-slate-300'}`}>
-                    {r.priority}
-                  </span>
+        {/* Leaflet Map Card */}
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 flex flex-col shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">समस्याको नक्सा</h3>
+            <button type="button" className="text-[10px] font-bold px-3 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-200 cursor-pointer">
+              Filter
+            </button>
+          </div>
+          <div className="h-[300px] rounded-xl overflow-hidden border border-slate-200 relative">
+            <LeafletMap reports={reports} activeReportId={selectedReportId} />
+          </div>
+          {/* Map Legend */}
+          <div className="flex justify-around items-center text-[10px] text-slate-500 font-bold border-t border-slate-100 pt-4 mt-4 select-none">
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> गम्भीर</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" /> मध्यम</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block" /> सामान्य</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> समाधान गरिएको</span>
+          </div>
+        </div>
+
+        {/* Recent Updates Card */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">ताजा अपडेटहरु</h3>
+            <span onClick={() => setCurrentTab('my-reports')} className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer">View All</span>
+          </div>
+          <div className="space-y-3.5 flex-1">
+            {[
+              { id: '1', title: 'ठुला खाल्डाखुल्डी - घोराही-१५', addr: 'Ghorahi-15, Tulsipur Road', time: '15 मिनेट अघि', badge: 'गम्भीर', color: 'bg-red-50 text-red-600 border-red-100' },
+              { id: '2', title: 'फोहोर व्यवस्थापन समस्या', addr: 'Ghorahi-10, Himalaya Road', time: '1 हप्ता अघि', badge: 'प्रक्रियामा', color: 'bg-amber-50 text-amber-600 border-amber-100' },
+              { id: '3', title: 'सडक बत्ती बिग्रिएको', addr: 'Ghorahi-12, Milan Chowk', time: '2 हप्ता अघि', badge: 'मध्यम', color: 'bg-yellow-50 text-yellow-600 border-yellow-100' },
+              { id: '4', title: 'पानी जम्ने समस्या समाधान', addr: 'Ghorahi-8, Park Area', time: '1 दिन अघि', badge: 'समाधान गरिएको', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' }
+            ].map((upd) => (
+              <div key={upd.id} className="p-3 bg-slate-50/50 border border-slate-100 rounded-xl flex justify-between items-center text-xs">
+                <div className="space-y-1">
+                  <div className="font-bold text-slate-800">{upd.title}</div>
+                  <div className="text-[9px] text-slate-400">{upd.addr}</div>
+                  <div className="text-[8px] text-slate-400 font-mono">{upd.time}</div>
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{r.description}</p>
-                <div className="flex items-center justify-between text-[9px] text-slate-500 mt-3 font-mono">
-                  <span>{r.category} • Ward {r.wardId}</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); supportReport(r.id); }}
-                      className="flex items-center gap-0.5 hover:text-blue-400 transition-colors"
-                    >
-                      <ThumbsUp className="w-3 h-3" /> {r.supportCount}
-                    </button>
-                    <span className="flex items-center gap-0.5"><MessageSquare className="w-3 h-3" /> {comments.filter(c => c.reportId === r.id).length}</span>
-                  </div>
-                </div>
+                <span className={`text-[8px] font-extrabold uppercase px-2 py-0.5 border rounded-lg tracking-wider ${upd.color}`}>
+                  {upd.badge}
+                </span>
               </div>
             ))}
           </div>
         </div>
+      </div>
 
-        <div className="lg:col-span-2 space-y-6">
-          <div className="h-[280px] rounded-xl overflow-hidden border border-slate-800">
-            <LeafletMap reports={reports} activeReportId={selectedReport?.id} />
-          </div>
-
-          {selectedReport && (
-            <div className="glass-panel p-5 space-y-4">
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <h3 className="text-base font-bold text-slate-100">{selectedReport.title}</h3>
-                  <p className="text-[10px] text-slate-500 font-mono mt-1">📍 {selectedReport.address} • Submitted: {formatNepalTime(selectedReport.createdAt)}</p>
-                </div>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-blue-400 border border-slate-700">{selectedReport.status.replace('_', ' ')}</span>
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed">{selectedReport.description}</p>
-
-              <div className="border-t border-slate-800/80 pt-4 space-y-3">
-                <h4 className="text-xs font-bold text-slate-400">Comments & Activity Logs</h4>
-                <div className="space-y-2.5 max-h-36 overflow-y-auto">
-                  {selectedReportComments.map(c => (
-                    <div key={c.id} className={`p-2.5 rounded text-xs ${c.isOfficialUpdate ? 'bg-blue-950/20 border border-blue-900/40' : 'bg-slate-900 border border-slate-850'}`}>
-                      <div className="flex justify-between font-bold text-slate-300 text-[10px]">
-                        <span>{c.userName} ({c.userRole})</span>
-                        <span className="text-slate-500">{formatNepalTime(c.createdAt).split(',')[0]}</span>
-                      </div>
-                      <p className="text-slate-400 mt-1">{c.content}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <input type="text" placeholder="Write a comment..." value={newCommentText} onChange={e => setNewCommentText(e.target.value)} className="flex-1 bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-300 focus:outline-none" />
-                  <button onClick={() => { if (newCommentText) { addComment(selectedReport.id, newCommentText); setNewCommentText(''); } }} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-2 rounded text-xs transition-colors">Post</button>
-                </div>
+      {/* Bottom Row: Charts & Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Report Status Donut Chart */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col shadow-sm">
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4">रिपोर्टको स्थिति</h3>
+          <div className="flex items-center justify-around flex-1 py-4">
+            {/* SVG Donut */}
+            <div className="relative w-28 h-28">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15.91" fill="none" stroke="#e2e8f0" strokeWidth="3" />
+                {/* Resolved 71.5% */}
+                <circle cx="18" cy="18" r="15.91" fill="none" stroke="#10b981" strokeWidth="3.5" strokeDasharray="71.5 100" strokeDashoffset="0" />
+                {/* Medium 23.9% */}
+                <circle cx="18" cy="18" r="15.91" fill="none" stroke="#f59e0b" strokeWidth="3.5" strokeDasharray="23.9 100" strokeDashoffset="-71.5" />
+                {/* Critical 4.6% */}
+                <circle cx="18" cy="18" r="15.91" fill="none" stroke="#ef4444" strokeWidth="3.5" strokeDasharray="4.6 100" strokeDashoffset="-95.4" />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[8px] font-bold text-slate-400 uppercase">कुल</span>
+                <span className="text-base font-extrabold text-slate-800 font-mono">1,248</span>
               </div>
             </div>
-          )}
+            {/* Legend info */}
+            <div className="space-y-1.5 text-[10px] font-bold text-slate-500 font-sans">
+              <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500" /> गम्भीर (4.6%)</div>
+              <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> मध्यम (23.9%)</div>
+              <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> सामान्य (71.5%)</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Activity line chart */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col shadow-sm">
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4">यो महिनाको गतिविधि</h3>
+          <div className="flex-1 min-h-[140px] flex flex-col justify-between">
+            {/* SVG line chart */}
+            <svg className="w-full h-24 overflow-visible" viewBox="0 0 100 30">
+              {/* Grid Lines */}
+              <line x1="0" y1="10" x2="100" y2="10" stroke="#f1f5f9" strokeWidth="0.5" />
+              <line x1="0" y1="20" x2="100" y2="20" stroke="#f1f5f9" strokeWidth="0.5" />
+              {/* Submitted Line (Blue) */}
+              <path d="M 0,22 Q 25,12 50,16 T 100,6" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" />
+              <circle cx="0" cy="22" r="1.2" fill="#2563eb" />
+              <circle cx="25" cy="15" r="1.2" fill="#2563eb" />
+              <circle cx="50" cy="16" r="1.2" fill="#2563eb" />
+              <circle cx="75" cy="14" r="1.2" fill="#2563eb" />
+              <circle cx="100" cy="6" r="1.2" fill="#2563eb" />
+
+              {/* Resolved Line (Green) */}
+              <path d="M 0,27 Q 25,23 50,22 T 100,15" fill="none" stroke="#10b981" strokeWidth="1.8" strokeLinecap="round" />
+              <circle cx="0" cy="27" r="1.2" fill="#10b981" />
+              <circle cx="25" cy="24" r="1.2" fill="#10b981" />
+              <circle cx="50" cy="22" r="1.2" fill="#10b981" />
+              <circle cx="75" cy="21" r="1.2" fill="#10b981" />
+              <circle cx="100" cy="15" r="1.2" fill="#10b981" />
+            </svg>
+            <div className="flex justify-between text-[8px] font-bold text-slate-400 font-mono tracking-tight select-none">
+              <span>1 Jun</span>
+              <span>8 Jun</span>
+              <span>15 Jun</span>
+              <span>22 Jun</span>
+              <span>29 Jun</span>
+            </div>
+            {/* Chart Legend */}
+            <div className="flex justify-center gap-4 text-[9px] font-bold text-slate-500 pt-2 border-t border-slate-50">
+              <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-blue-600 inline-block" /> रिपोर्टहरु</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-emerald-500 inline-block" /> समाधान भएका</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Access Card Grid */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col shadow-sm justify-between">
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">छिटो पहुँच</h3>
+          <div className="grid grid-cols-3 gap-2.5 flex-1">
+            {[
+              { label: 'नयाँ रिपोर्ट गर्नुहोस्', icon: FileText, color: 'text-blue-600 bg-blue-50/50', action: () => setCurrentTab('report-form') },
+              { label: 'नक्सा हेर्नुहोस्', icon: Map, color: 'text-emerald-600 bg-emerald-50/50', action: () => setCurrentTab('map-view') },
+              { label: 'आपतकालीन सम्पर्क', icon: Phone, color: 'text-rose-600 bg-rose-50/50', action: () => setShowEmergencyDialog(true) },
+              { label: 'गुनासो दिनुहोस्', icon: MessageCircle, color: 'text-purple-600 bg-purple-50/50', action: () => setShowFeedbackDialog(true) },
+              { label: 'सुझाव दिनुहोस्', icon: Clock, color: 'text-amber-600 bg-amber-50/50', action: () => setShowFeedbackDialog(true) },
+              { label: 'FAQ हेर्नुहोस्', icon: HelpCircle, color: 'text-indigo-600 bg-indigo-50/50', action: () => setShowEmergencyDialog(true) }
+            ].map((act, idx) => {
+              const Icon = act.icon;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={act.action}
+                  className="p-2 border border-slate-100 hover:bg-slate-50 rounded-xl flex flex-col items-center justify-center text-center space-y-1.5 transition-colors cursor-pointer"
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${act.color}`}>
+                    <Icon className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-[9px] font-bold text-slate-600 leading-tight block">{act.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
+
+      {/* Footer Address */}
+      <footer className="flex flex-col sm:flex-row justify-between items-center text-[10px] text-slate-400 font-bold border-t border-slate-200/60 pt-4 mt-6 select-none leading-relaxed">
+        <div className="space-y-0.5 text-center sm:text-left">
+          <div>घोराही उपमहानगरपालिका, दाङ</div>
+          <div className="text-[9px] text-slate-400/80 font-normal">© 2026 Dang Smart City Portal. All Rights Reserved.</div>
+        </div>
+        <div className="flex gap-4 mt-2 sm:mt-0 font-mono text-[9px]">
+          <span>सम्पर्क: 082-XXXXXXX</span>
+          <span className="text-slate-300">|</span>
+          <span>info@ghorahi.gov.np</span>
+        </div>
+      </footer>
+
+      {/* dialog modals */}
+      {showEmergencyDialog && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 w-full max-w-sm space-y-4 shadow-xl text-slate-800">
+            <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1">
+              <Phone className="w-4 h-4 text-red-500 animate-bounce" />
+              <span>Emergency Help Desk Contacts</span>
+            </h3>
+            <div className="space-y-2 text-xs font-mono">
+              <div className="flex justify-between border-b border-slate-100 pb-1.5"><span>Ward Police Desk:</span> <span>100 / 082-560199</span></div>
+              <div className="flex justify-between border-b border-slate-100 pb-1.5"><span>Ghorahi Fire Station:</span> <span>101 / 082-560233</span></div>
+              <div className="flex justify-between border-b border-slate-100 pb-1.5"><span>Dang District Hospital:</span> <span>082-560144</span></div>
+              <div className="flex justify-between"><span>City Inquiry Desk:</span> <span>082-560122</span></div>
+            </div>
+            <button onClick={() => setShowEmergencyDialog(false)} className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors">
+              Close Contacts
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showFeedbackDialog && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 w-full max-w-sm space-y-4 shadow-xl text-slate-800">
+            <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <Info className="w-4 h-4 text-blue-500" />
+              <span>Submit Feedback or Grievance</span>
+            </h3>
+            <textarea placeholder="Write your grievance or suggestions for Ghorahi Sub-Metropolitan City..." className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-600 focus:outline-none" rows={3} />
+            <button onClick={() => setShowFeedbackDialog(false)} className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors">
+              Submit Feedback
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
 export default CitizenPortal;

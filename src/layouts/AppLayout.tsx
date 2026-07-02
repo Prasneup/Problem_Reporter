@@ -57,6 +57,13 @@ export const AppLayout: React.FC = () => {
       case 'citizen-dash':
       case 'report-form':
       case 'my-reports':
+      case 'active-reports':
+      case 'alerts':
+      case 'map-view':
+      case 'statistics':
+      case 'community':
+      case 'profile':
+      case 'help':
         return <CitizenPortal activeView={currentTab} setCurrentTab={setCurrentTab} />;
       case 'verifier-dash':
       case 'verifier-queue':
@@ -84,7 +91,7 @@ export const AppLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col selection:bg-blue-600/30">
+    <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-blue-600/30">
       <Navbar />
       <div className="flex flex-1 pt-16">
         <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} />
