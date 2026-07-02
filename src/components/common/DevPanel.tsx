@@ -22,24 +22,24 @@ export const DevPanel: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[9999] bg-slate-950/90 border-t border-slate-800 text-slate-300 px-4 py-2 flex flex-wrap items-center justify-between gap-4 backdrop-blur-md shadow-2xl">
+    <div className="fixed bottom-0 left-0 right-0 z-[9999] bg-white border-t border-slate-200 text-slate-700 px-4 py-2 flex flex-wrap items-center justify-between gap-4 shadow-lg font-sans">
       <div className="flex items-center gap-2">
-        <Shield className="w-5 h-5 text-blue-500 animate-pulse" />
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Dev Sandbox:</span>
-        <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded px-2 py-1">
-          <UserCheck className="w-4 h-4 text-blue-400" />
-          <span className="text-xs font-semibold text-slate-200">
+        <Shield className="w-4 h-4 text-blue-600 animate-pulse" />
+        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Dev Sandbox:</span>
+        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 rounded px-2 py-1 select-none font-bold text-slate-800">
+          <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+          <span className="text-[10px]">
             {currentUser.name} ({currentUser.role})
           </span>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <span className="text-xs text-slate-400">Quick Switch Role:</span>
+        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Quick Switch Role:</span>
         <select
           value={currentUser.role}
           onChange={(e) => setUserRole(e.target.value as UserRole)}
-          className="bg-slate-900 border border-slate-800 text-xs rounded px-2.5 py-1 text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
+          className="bg-slate-50 border border-slate-200 text-[10px] rounded px-2.5 py-1 text-slate-700 font-bold focus:outline-none focus:border-blue-500 transition-colors"
         >
           {roles.map((r) => (
             <option key={r} value={r}>
@@ -50,9 +50,9 @@ export const DevPanel: React.FC = () => {
 
         <button
           onClick={() => setOnlineStatus(!isOnline)}
-          className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded transition-all duration-200 ${isOnline
-              ? 'bg-emerald-950/50 border border-emerald-800 text-emerald-400 hover:bg-emerald-900/40'
-              : 'bg-rose-950/50 border border-rose-800 text-rose-400 hover:bg-rose-900/40'
+          className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1.5 rounded transition-all duration-200 cursor-pointer ${isOnline
+              ? 'bg-emerald-50 border border-emerald-200 text-emerald-600'
+              : 'bg-rose-50 border border-rose-200 text-rose-600'
             }`}
         >
           {isOnline ? (
@@ -71,7 +71,7 @@ export const DevPanel: React.FC = () => {
         <button
           onClick={handleReset}
           title="Reset local changes"
-          className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs rounded px-2 py-1.5 transition-colors text-slate-400 hover:text-slate-200"
+          className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-[10px] font-bold rounded px-2.5 py-1.5 transition-colors text-slate-600 cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Reset Db</span>
