@@ -65,13 +65,13 @@ export const OpenDataPortal: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       <div className="glass-panel p-6">
         <div className="flex items-center gap-3">
-          <Database className="w-6 h-6 text-blue-400" />
+          <Database className="w-6 h-6 text-blue-600" />
           <div>
-            <h2 className="text-xl font-bold text-slate-100">Open Government Data & API</h2>
-            <p className="text-xs text-slate-400">Public data access in compliance with Nepal’s Right to Information (RTI) provisions.</p>
+            <h2 className="text-xl font-bold text-slate-800">Open Government Data & API</h2>
+            <p className="text-xs text-slate-500 font-semibold">Public data access in compliance with Nepal’s Right to Information (RTI) provisions.</p>
           </div>
         </div>
       </div>
@@ -79,44 +79,44 @@ export const OpenDataPortal: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1 space-y-6">
           <div className="glass-panel p-5 space-y-4">
-            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <Key className="w-4 h-4 text-blue-400" />
+            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <Key className="w-4 h-4 text-blue-600" />
               API Authentication
             </h3>
-            <p className="text-[11px] text-slate-400">Developers must include this key in the header: <code>X-API-Key</code></p>
+            <p className="text-[11px] text-slate-400 font-bold">Developers must include this key in the header: <code>X-API-Key</code></p>
             <div className="flex items-center gap-2">
               <input 
                 type="text" 
                 readOnly 
                 value={apiKey} 
-                className="bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-[10px] font-mono text-slate-300 flex-1 select-all" 
+                className="bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-[10px] font-mono text-slate-700 flex-1 select-all focus:outline-none font-bold" 
               />
               <button 
                 onClick={generateApiKey}
-                className="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded transition-colors text-slate-300"
+                className="p-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded transition-colors text-slate-600 cursor-pointer"
                 title="Regenerate Key"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
               </button>
             </div>
             
-            <div className="border-t border-slate-800 pt-3">
-              <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+            <div className="border-t border-slate-100 pt-3">
+              <div className="flex justify-between text-[10px] text-slate-500 font-bold mb-1">
                 <span>Rate Limits:</span>
-                <span className="text-slate-300 font-semibold">120 / 150 min</span>
+                <span className="text-slate-750 font-bold">120 / 150 min</span>
               </div>
-              <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
-                <div className="bg-blue-500 h-full rounded-full" style={{ width: '80%' }}></div>
+              <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200">
+                <div className="bg-blue-600 h-full rounded-full" style={{ width: '80%' }}></div>
               </div>
             </div>
           </div>
 
           <div className="glass-panel p-5 space-y-3">
-            <h3 className="text-sm font-bold text-slate-200">Public Datasets</h3>
-            <p className="text-[11px] text-slate-400">Download complete structured reports in standard CSV format for GIS applications or analysis.</p>
+            <h3 className="text-sm font-bold text-slate-800 font-sans">Public Datasets</h3>
+            <p className="text-[11px] text-slate-500 font-semibold font-sans">Download complete structured reports in standard CSV format for GIS applications or analysis.</p>
             <button 
               onClick={downloadCSV}
-              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-3 rounded-lg text-xs transition-colors shadow-glow"
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-3 rounded-lg text-xs transition-colors shadow-sm cursor-pointer"
             >
               <Download className="w-4 h-4" />
               Download Reports CSV
@@ -125,12 +125,12 @@ export const OpenDataPortal: React.FC = () => {
         </div>
 
         <div className="md:col-span-2 glass-panel p-5 flex flex-col">
-          <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <Code className="w-4 h-4 text-blue-400" />
+          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <Code className="w-4 h-4 text-blue-600" />
               API Playground & Sandbox
             </h3>
-            <span className="text-[10px] text-slate-500 font-mono">Status: ACTIVE</span>
+            <span className="text-[10px] text-slate-400 font-mono font-bold">Status: ACTIVE</span>
           </div>
 
           <div className="flex flex-wrap gap-2 mb-4">
@@ -138,10 +138,10 @@ export const OpenDataPortal: React.FC = () => {
               <button
                 key={endpoint}
                 onClick={() => handleTestApi(endpoint)}
-                className={`text-[10px] font-mono px-3 py-1.5 rounded transition-all ${
+                className={`text-[10px] font-mono px-3 py-1.5 rounded transition-all cursor-pointer ${
                   activeEndpoint === endpoint
                     ? 'bg-blue-600 text-white font-bold'
-                    : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                    : 'bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 hover:bg-slate-100'
                 }`}
               >
                 GET {endpoint}
@@ -149,14 +149,14 @@ export const OpenDataPortal: React.FC = () => {
             ))}
           </div>
 
-          <div className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-4 font-mono text-xs overflow-y-auto max-h-[300px] relative min-h-[180px]">
+          <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 font-mono text-xs overflow-y-auto max-h-[300px] relative min-h-[180px]">
             {loadingApi && (
-              <div className="absolute inset-0 bg-slate-950/70 flex items-center justify-center text-slate-400 gap-2">
-                <RefreshCw className="w-4 h-4 animate-spin" />
+              <div className="absolute inset-0 bg-slate-50/70 flex items-center justify-center text-slate-500 gap-2 font-bold">
+                <RefreshCw className="w-4 h-4 animate-spin text-blue-650" />
                 <span>Fetching data...</span>
               </div>
             )}
-            <pre className="text-blue-400 whitespace-pre-wrap">
+            <pre className="text-blue-650 whitespace-pre-wrap font-bold">
               {apiResponse || '// Select an endpoint above and click or wait for response'}
             </pre>
           </div>
