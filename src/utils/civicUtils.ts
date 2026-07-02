@@ -1,5 +1,19 @@
 import type { Report, ReportCategory } from '../types';
 import { MUNICIPALITIES } from '../constants/municipalities';
+import { MUNI_WARDS_MAP } from '../constants/wardBoundaries';
+
+function isPointInPolygon(lat: number, lng: number, polygon: [number, number][]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i][0], yi = polygon[i][1];
+    const xj = polygon[j][0], yj = polygon[j][1];
+
+    const intersect = ((yi > lng) !== (yj > lng))
+        && (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
 
 // 1. Calculate Priority level dynamically
 export function calculatePriority(category: ReportCategory, supports: number, isEmergency: boolean): 'Low' | 'Medium' | 'High' | 'Critical' | 'Emergency' {
@@ -24,9 +38,26 @@ export function detectMunicipalityAndWard(lat: number, lng: number) {
     }
   }
 
-  // Generate a realistic ward based on hash of lat/lng
-  const wardHash = Math.abs(Math.floor((lat + lng) * 1000));
-  const ward = (wardHash % closestMuni.wardCount) + 1;
+  // Check if we have GIS boundaries for this municipality
+  const wardBoundaries = MUNI_WARDS_MAP[closestMuni.id];
+  if (wardBoundaries) {
+    for (const wb of wardBoundaries) {
+      if (isPointInPolygon(lat, lng, wb.polygon)) {
+        return {
+          municipalityId: closestMuni.id,
+          municipalityName: closestMuni.name,
+          wardId: wb.wardNumber,
+          address: `${wb.name} Ward ${wb.wardNumber}, Dang District, Nepal`
+        };
+      }
+    }
+  }
+
+  // Fallback using deterministic radial sectors around municipality headquarters
+  const angle = Math.atan2(lat - closestMuni.latitude, lng - closestMuni.longitude) + Math.PI; // 0 to 2*PI
+  const sectorCount = closestMuni.wardCount;
+  const sectorWidth = (2 * Math.PI) / sectorCount;
+  const ward = Math.min(sectorCount, Math.floor(angle / sectorWidth) + 1);
 
   return {
     municipalityId: closestMuni.id,
