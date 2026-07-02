@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useCivicStore } from '../../stores/civicStore';
 import { LeafletMap } from '../maps/LeafletMap';
-import { detectMunicipalityAndWard, calculatePriority } from '../../utils/civicUtils';
+import { detectMunicipalityAndWard } from '../../utils/civicUtils';
 import { aiVerificationService } from '../../services/aiVerificationService';
-import { DuplicateChecker } from '../validation/DuplicateChecker';
-import { AiImageScanner } from '../validation/AiImageScanner';
-import type { ReportCategory, Report, GPSReading, ReportImage } from '../../types';
+import { DuplicateChecker } from '../../features/ai/DuplicateChecker';
+import { AiImageScanner } from '../../features/ai/AiImageScanner';
+import type { ReportCategory } from '../../types';
 import { Upload, MapPin, Loader, Info, Image as ImageIcon } from 'lucide-react';
+
+interface GPSReading {
+  lat: number;
+  lng: number;
+  accuracy: number;
+}
 
 interface ReportFormProps {
   onSuccess: () => void;
@@ -248,8 +254,8 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
               userReputation={currentUser.reputationPoints}
               coords={coords}
               gpsAccuracy={gpsAccuracy || 5.0}
-              onCategoryCorrection={(newCat) => setCategory(newCat as ReportCategory)}
-              onAnalysisComplete={(res) => {
+              onCategoryCorrection={(newCat: string) => setCategory(newCat as ReportCategory)}
+              onAnalysisComplete={(res: any) => {
                 setAiVerified(true);
                 setTrustScore(res.trustScore);
                 setAiAnalysisDetails(res.analysisDetails);
