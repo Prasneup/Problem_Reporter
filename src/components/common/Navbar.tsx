@@ -5,8 +5,9 @@ import { Bell, Globe, ChevronDown, Search } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const { t, language, setLanguage } = useTranslation();
-  const { currentUser, notifications, dismissNotification } = useCivicStore();
+  const { currentUser, notifications, dismissNotification, signOut } = useCivicStore();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const activeNotifications = notifications.filter(n => !n.isRead);
 
@@ -121,17 +122,42 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* User Card */}
-        <div className="flex items-center gap-2.5 border-l border-slate-200 pl-3">
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60"
-            alt={currentUser.name}
-            className="w-8 h-8 rounded-full object-cover border border-slate-200"
-          />
-          <div className="text-left hidden lg:block select-none">
-            <div className="text-xs font-bold text-slate-700 leading-tight">{currentUser.name}</div>
-            <div className="text-[9px] text-slate-400 leading-none">{currentUser.role}</div>
-          </div>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden lg:block" />
+        <div className="relative">
+          <button
+            onClick={() => setShowProfileMenu(!showProfileMenu)}
+            className="flex items-center gap-2.5 border-l border-slate-200 pl-3 focus:outline-none cursor-pointer group"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60"
+              alt={currentUser.name}
+              className="w-8 h-8 rounded-full object-cover border border-slate-200 group-hover:border-blue-500 transition-colors"
+            />
+            <div className="text-left hidden lg:block select-none">
+              <div className="text-xs font-bold text-slate-700 leading-tight group-hover:text-blue-600 transition-colors">{currentUser.name}</div>
+              <div className="text-[9px] text-slate-450 leading-none font-bold mt-0.5">{currentUser.role}</div>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden lg:block group-hover:text-slate-650 transition-colors" />
+          </button>
+
+          {showProfileMenu && (
+            <div className="absolute right-0 mt-3 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150 font-bold text-xs text-slate-650">
+              <div className="px-3 py-2 border-b border-slate-100 text-[10px] text-slate-400 uppercase tracking-wider select-none">
+                Logged in Account
+              </div>
+              <div className="px-3 py-2 text-slate-800 truncate">
+                {currentUser.name}
+              </div>
+              <button
+                onClick={() => {
+                  setShowProfileMenu(false);
+                  signOut();
+                }}
+                className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-rose-650 hover:bg-rose-50/50 transition-colors cursor-pointer mt-1"
+              >
+                <span>Sign Out</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </nav>
