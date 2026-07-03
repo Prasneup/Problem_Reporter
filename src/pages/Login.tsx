@@ -21,7 +21,7 @@ export const Login: React.FC = () => {
     try {
       const userProfile = await authService.signIn(email, password);
       setCurrentUser(userProfile);
-      navigate('/');
+      navigate('/app');
     } catch (err) {
       console.error(err);
       const errMsg = err instanceof Error ? err.message : 'Invalid email or password. Please try again.';
@@ -42,12 +42,12 @@ export const Login: React.FC = () => {
           <div className="inline-flex p-3 bg-blue-50 rounded-xl text-blue-600 mb-3 border border-blue-100">
             <LogIn className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-800">Dang District Portal</h2>
-          <p className="text-slate-400 text-xs mt-1 font-semibold">Smart City Problem Reporter Platform</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-800 font-sans">Ghorahi Sub-Metropolitan Portal</h2>
+          <p className="text-slate-450 text-xs mt-1 font-bold">Smart City Problem Reporter Platform</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-red-600 text-xs flex items-center gap-2 mb-6 animate-pulse">
+          <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-red-650 text-xs flex items-center gap-2 mb-6 animate-pulse font-bold">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -63,8 +63,8 @@ export const Login: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="citizen@dang.gov.np"
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:outline-none transition-all"
+                placeholder="citizen@ghorahimun.gov.np"
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:outline-none transition-all font-bold"
               />
             </div>
           </div>
