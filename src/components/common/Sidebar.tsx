@@ -77,9 +77,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, setCurrentTab }) =
       <div className="p-4 border-t border-slate-100 select-none">
         <button
           onClick={signOut}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-650 hover:bg-rose-50/50 transition-colors cursor-pointer"
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50/50 transition-colors cursor-pointer"
         >
-          <LogOut className="w-4 h-4 text-rose-550" />
+          <LogOut className="w-4 h-4 text-rose-550 text-rose-500" />
           <span>Sign Out</span>
         </button>
       </div>

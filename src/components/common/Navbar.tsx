@@ -152,7 +152,7 @@ export const Navbar: React.FC = () => {
                   setShowProfileMenu(false);
                   signOut();
                 }}
-                className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-rose-650 hover:bg-rose-50/50 transition-colors cursor-pointer mt-1"
+                className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-rose-600 hover:bg-rose-50/50 transition-colors cursor-pointer mt-1"
               >
                 <span>Sign Out</span>
               </button>
