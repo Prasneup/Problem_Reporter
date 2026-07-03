@@ -1,36 +1,22 @@
-export type UserRole =
-  | 'Citizen'
-  | 'Community Verifier'
-  | 'Field Inspector'
-  | 'Ward Officer'
-  | 'Municipality Officer'
-  | 'District Administrator'
-  | 'Super Admin';
+export type UserRole = 'Citizen' | 'Admin' | 'Department Officer';
 
 export type ReportCategory =
+  | 'Garbage / Waste Management'
   | 'Road Damage'
-  | 'Potholes'
-  | 'Garbage'
-  | 'Water Supply'
-  | 'Drainage'
-  | 'Electricity'
-  | 'Street Lights'
-  | 'Environmental Issues'
-  | 'Public Safety'
-  | 'Infrastructure Problems'
-  | 'Other'
-  | 'Emergency';
+  | 'Water Supply Problems'
+  | 'Drainage / Sewer'
+  | 'Street Light / Electricity'
+  | 'Public Infrastructure'
+  | 'Accident / Traffic Emergency'
+  | 'Fire Emergency'
+  | 'Public Safety / Crime';
 
 export type ReportStatus =
   | 'Submitted'
-  | 'AI_Flagged'
   | 'Under_Review'
-  | 'Verified'
   | 'Assigned'
   | 'In_Progress'
   | 'Resolved'
-  | 'Rejected'
-  | 'Reopened'
   | 'Closed';
 
 export type PriorityLevel = 'Low' | 'Medium' | 'High' | 'Critical' | 'Emergency';
@@ -41,6 +27,7 @@ export interface UserProfile {
   email: string;
   phone?: string;
   role: UserRole;
+  department?: string;
   municipalityId?: string;
   wardId?: number;
   reputationPoints: number;

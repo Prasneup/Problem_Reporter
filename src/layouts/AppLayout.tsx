@@ -8,12 +8,8 @@ import { useCivicStore } from '../stores/civicStore';
 
 // Main Sub-portals/Views
 import CitizenPortal from '../pages/CitizenPortal';
-import VerifierPortal from '../pages/VerifierPortal';
-import InspectorPortal from '../pages/InspectorPortal';
-import WardOfficerPortal from '../pages/WardOfficerPortal';
-import MunicipalityPortal from '../pages/MunicipalityPortal';
-import DistrictAdminPortal from '../pages/DistrictAdminPortal';
-import SuperAdminPortal from '../pages/SuperAdminPortal';
+import AdminPortal from '../pages/AdminPortal';
+import DepartmentPortal from '../pages/DepartmentPortal';
 import OpenDataPortal from '../features/transparency/OpenDataPortal';
 
 export const AppLayout: React.FC = () => {
@@ -34,12 +30,8 @@ export const AppLayout: React.FC = () => {
   const getInitialTab = (userRole: string) => {
     switch (userRole) {
       case 'Citizen': return 'citizen-dash';
-      case 'Community Verifier': return 'verifier-dash';
-      case 'Field Inspector': return 'inspector-dash';
-      case 'Ward Officer': return 'ward-dash';
-      case 'Municipality Officer': return 'muni-dash';
-      case 'District Administrator': return 'district-dash';
-      case 'Super Admin': return 'super-dash';
+      case 'Admin': return 'admin-dash';
+      case 'Department Officer': return 'dept-dash';
       default: return 'transparency';
     }
   };
@@ -65,25 +57,10 @@ export const AppLayout: React.FC = () => {
       case 'profile':
       case 'help':
         return <CitizenPortal activeView={currentTab} setCurrentTab={setCurrentTab} />;
-      case 'verifier-dash':
-      case 'verifier-queue':
-        return <VerifierPortal activeView={currentTab} />;
-      case 'inspector-dash':
-      case 'inspector-jobs':
-        return <InspectorPortal activeView={currentTab} />;
-      case 'ward-dash':
-      case 'ward-inbox':
-        return <WardOfficerPortal activeView={currentTab} />;
-      case 'muni-dash':
-      case 'muni-budgets':
-        return <MunicipalityPortal activeView={currentTab} />;
-      case 'district-dash':
-      case 'district-analytics':
-        return <DistrictAdminPortal activeView={currentTab} />;
-      case 'super-dash':
-      case 'super-users':
-      case 'super-audits':
-        return <SuperAdminPortal activeView={currentTab} />;
+      case 'admin-dash':
+        return <AdminPortal />;
+      case 'dept-dash':
+        return <DepartmentPortal />;
       case 'transparency':
       default:
         return <OpenDataPortal />;
@@ -105,4 +82,5 @@ export const AppLayout: React.FC = () => {
     </div>
   );
 };
+
 export default AppLayout;

@@ -17,8 +17,8 @@ function isPointInPolygon(lat: number, lng: number, polygon: [number, number][])
 
 // 1. Calculate Priority level dynamically
 export function calculatePriority(category: ReportCategory, supports: number, isEmergency: boolean): 'Low' | 'Medium' | 'High' | 'Critical' | 'Emergency' {
-  if (isEmergency || category === 'Emergency') return 'Emergency';
-  const score = supports + (category === 'Road Damage' || category === 'Water Supply' ? 5 : 2);
+  if (isEmergency || ['Accident / Traffic Emergency', 'Fire Emergency', 'Public Safety / Crime'].includes(category)) return 'Emergency';
+  const score = supports + (category === 'Road Damage' || category === 'Water Supply Problems' ? 5 : 2);
   if (score > 30) return 'Critical';
   if (score > 15) return 'High';
   if (score > 5) return 'Medium';

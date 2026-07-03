@@ -1,24 +1,34 @@
 import React from 'react';
 import { useCivicStore } from '../../stores/civicStore';
-import type { UserRole } from '../../types';
+import { MOCK_PROFILES } from '../../stores/mockData';
 import { Wifi, WifiOff, UserCheck, RotateCcw, Shield } from 'lucide-react';
 
 export const DevPanel: React.FC = () => {
-  const { currentUser, setUserRole, isOnline, setOnlineStatus } = useCivicStore();
+  const { currentUser, setCurrentUser, isOnline, setOnlineStatus } = useCivicStore();
 
-  const roles: UserRole[] = [
-    'Citizen',
-    'Community Verifier',
-    'Field Inspector',
-    'Ward Officer',
-    'Municipality Officer',
-    'District Administrator',
-    'Super Admin'
+  const mockUsers = [
+    { key: 'citizen', label: 'Citizen (Yogesh Pulami)' },
+    { key: 'admin', label: 'Admin (Ghorahi Admin)' },
+    { key: 'sanitation_officer', label: 'Sanitation Officer (garbage@)' },
+    { key: 'roads_officer', label: 'Roads Officer (roads@)' },
+    { key: 'water_officer', label: 'Water Officer (water@)' },
+    { key: 'drainage_officer', label: 'Drainage Officer (drainage@)' },
+    { key: 'electrical_officer', label: 'Electrical Officer (electric@)' },
+    { key: 'police_officer', label: 'Traffic Police Officer (police@)' },
+    { key: 'safety_officer', label: 'Nepal Police Officer (safety@)' },
+    { key: 'fire_officer', label: 'Fire Officer (fire@)' }
   ];
 
   const handleReset = () => {
     localStorage.removeItem('dang-smart-city-store');
     window.location.reload();
+  };
+
+  const getActiveUserKey = () => {
+    const found = Object.keys(MOCK_PROFILES).find(
+      key => MOCK_PROFILES[key].email === currentUser.email
+    );
+    return found || 'citizen';
   };
 
   return (
@@ -28,22 +38,25 @@ export const DevPanel: React.FC = () => {
         <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Dev Sandbox:</span>
         <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 rounded px-2 py-1 select-none font-bold text-slate-800">
           <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-          <span className="text-[10px]">
+          <span className="text-[10px] truncate max-w-[180px]">
             {currentUser.name} ({currentUser.role})
           </span>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Quick Switch Role:</span>
+        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Quick Switch Account:</span>
         <select
-          value={currentUser.role}
-          onChange={(e) => setUserRole(e.target.value as UserRole)}
+          value={getActiveUserKey()}
+          onChange={(e) => {
+            const profile = MOCK_PROFILES[e.target.value];
+            if (profile) setCurrentUser(profile);
+          }}
           className="bg-slate-50 border border-slate-200 text-[10px] rounded px-2.5 py-1 text-slate-700 font-bold focus:outline-none focus:border-blue-500 transition-colors"
         >
-          {roles.map((r) => (
-            <option key={r} value={r}>
-              {r}
+          {mockUsers.map((u) => (
+            <option key={u.key} value={u.key}>
+              {u.label}
             </option>
           ))}
         </select>
@@ -71,7 +84,7 @@ export const DevPanel: React.FC = () => {
         <button
           onClick={handleReset}
           title="Reset local changes"
-          className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-[10px] font-bold rounded px-2.5 py-1.5 transition-colors text-slate-600 cursor-pointer"
+          className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-[10px] font-bold rounded px-2.5 py-1.5 transition-colors text-slate-650 cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Reset Db</span>

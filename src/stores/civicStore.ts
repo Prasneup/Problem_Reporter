@@ -28,8 +28,9 @@ interface CivicState {
   addComment: (reportId: string, content: string) => Promise<void>;
   updateReportStatus: (reportId: string, status: Report['status'], notes?: string) => Promise<void>;
 
-  assignInspector: (reportId: string, inspectorId: string, inspectorName: string, notes?: string) => void;
-  completeAssignment: (reportId: string, afterImageUrl: string, notes?: string) => void;
+  assignDepartment: (reportId: string, department: string, remarks: string, priority: Report['priority'], status?: Report['status']) => Promise<void>;
+  resolveReportByDepartment: (reportId: string, remarks: string, proofUrl?: string) => Promise<void>;
+
   reopenReport: (reportId: string, notes: string, imageUrl: string) => void;
   syncOfflineQueue: () => void;
   dismissNotification: (id: string) => void;
@@ -46,10 +47,10 @@ export const useCivicStore = create<CivicState>()(
       budgets: MOCK_BUDGETS,
       notifications: [
         {
-          id: 'n-welcome',
+          id: 'n-init',
           userId: 'p-citizen',
-          title: 'Welcome to Dang Smart City Portal',
-          message: 'Thank you for participating in digital governance. Submit your reports to clean and fix our district.',
+          title: 'Welcome to Ghorahi Smart City Portal',
+          message: 'Submit reports on waste, road damage, lighting or emergencies directly to the municipal team.',
           type: 'info',
           isRead: false,
           createdAt: new Date().toISOString()
@@ -59,19 +60,23 @@ export const useCivicStore = create<CivicState>()(
       isOnline: true,
 
       setLanguage: (language) => set({ language }),
-      setCurrentUser: (currentUser) => set({ currentUser }),
 
       setUserRole: (role) => {
+        // Find profile with matching role
         const profileKey = Object.keys(MOCK_PROFILES).find(
           (key) => MOCK_PROFILES[key].role === role
-        ) || 'citizen';
-        set({ currentUser: MOCK_PROFILES[profileKey] });
+        );
+        if (profileKey) {
+          set({ currentUser: MOCK_PROFILES[profileKey] });
+        }
       },
+
+      setCurrentUser: (currentUser) => set({ currentUser }),
 
       signOut: async () => {
         try {
-          const { default: authService } = await import('../services/authService');
-          await authService.signOut();
+          const { supabase } = await import('../lib/supabase');
+          await supabase.auth.signOut();
         } catch (err) {
           console.error('Sign out error:', err);
         }
@@ -112,16 +117,12 @@ export const useCivicStore = create<CivicState>()(
         const user = get().currentUser;
 
         let imgUrl = newReport.imageUrl || '';
-        const isEmergency = newReport.isEmergency || newReport.category === 'Emergency';
+        const isEmergency = newReport.isEmergency || ['Accident / Traffic Emergency', 'Fire Emergency', 'Public Safety / Crime'].includes(newReport.category);
         
-        // Calculate status dynamically from AI Trust Engine details
         let initialStatus: Report['status'] = isEmergency ? 'Under_Review' : 'Submitted';
         if (newReport.aiAnalysis) {
           const trustScore = newReport.aiAnalysis.trustScore;
-          const isFake = newReport.aiAnalysis.isFake;
-          if (trustScore < 70 || isFake) {
-            initialStatus = 'AI_Flagged';
-          } else if (trustScore < 85) {
+          if (trustScore < 75) {
             initialStatus = 'Under_Review';
           }
         }
@@ -179,7 +180,7 @@ export const useCivicStore = create<CivicState>()(
           priority,
           supportCount: 0,
           duplicateCount: 0,
-          budgetEstimated: isEmergency ? 150000 : 35000,
+          budgetEstimated: isEmergency ? 150000 : 35500,
           budgetSpent: 0,
           createdAt: now,
           updatedAt: now,
@@ -201,6 +202,7 @@ export const useCivicStore = create<CivicState>()(
         };
 
         set((state) => ({
+          reports: [reportObj, ...state.reports],
           offlineQueue: [...state.offlineQueue, reportObj],
           notifications: [
             {
@@ -285,7 +287,7 @@ export const useCivicStore = create<CivicState>()(
           userName: user.name,
           userRole: user.role,
           content,
-          isOfficialUpdate: ['Ward Officer', 'Municipality Officer', 'District Administrator', 'Super Admin'].includes(user.role),
+          isOfficialUpdate: ['Admin', 'Department Officer'].includes(user.role),
           createdAt: new Date().toISOString()
         };
 
@@ -325,7 +327,7 @@ export const useCivicStore = create<CivicState>()(
               id: 'n-stat-' + Math.random().toString(36).substring(2, 11),
               userId: targetReport.reporterId,
               title: `Report Status Updated`,
-              message: `Your report "${targetReport.title}" is now: ${status.replace('_', ' ')}. Note: ${notes || 'Updated by municipal team.'}`,
+              message: `Your report "${targetReport.title}" is now: ${status.replace('_', ' ')}. Note: ${notes || 'Updated by Ghorahi team.'}`,
               type: status === 'Resolved' ? 'success' : 'info',
               isRead: false,
               createdAt: now
@@ -346,87 +348,134 @@ export const useCivicStore = create<CivicState>()(
         });
       },
 
-      assignInspector: (reportId, inspectorId, inspectorName, notes) => {
+      assignDepartment: async (reportId, department, remarks, priority, status = 'Assigned') => {
         const now = new Date().toISOString();
-        const assignmentObj: Assignment = {
-          id: 'a-' + Math.random().toString(36).substring(2, 11),
-          reportId,
-          inspectorId,
-          inspectorName,
-          assignedBy: get().currentUser.name,
-          notes,
-          status: 'Assigned',
-          createdAt: now
-        };
+        const user = get().currentUser;
+
+        if (get().isOnline) {
+          try {
+            const { default: reportService } = await import('../services/reportService');
+            // Update in DB
+            await reportService.updateReportStatus(reportId, status, `Assigned to ${department}. Remarks: ${remarks}`, user.id);
+          } catch (err) {
+            console.error('Error updating assignment in DB:', err);
+          }
+        }
 
         set((state) => {
-          const assignments = [...state.assignments, assignmentObj];
-          const reports = state.reports.map(r =>
-            r.id === reportId ? { ...r, status: 'Assigned' as const, updatedAt: now } : r
-          );
-
-          const newNotifications = [
-            {
-              id: 'n-insp-' + Math.random().toString(36).substring(2, 11),
-              userId: inspectorId,
-              title: 'New Inspection Assignment',
-              message: `You have been assigned to inspect: "${state.reports.find(r => r.id === reportId)?.title}"`,
-              type: 'info' as const,
-              isRead: false,
-              createdAt: now
-            },
-            ...state.notifications
-          ];
-
-          return { assignments, reports, notifications: newNotifications };
-        });
-      },
-
-      completeAssignment: (reportId, afterImageUrl) => {
-        const now = new Date().toISOString();
-        set((state) => {
-          const assignments = state.assignments.map(a =>
-            a.reportId === reportId ? { ...a, status: 'Completed' as const, completedAt: now } : a
-          );
-
-          const reports = state.reports.map(r => {
+          const reports = state.reports.map((r) => {
             if (r.id === reportId) {
-              const updatedImages = [
-                ...r.images,
-                {
-                  id: 'img-after-' + Math.random().toString(36).substring(2, 11),
-                  reportId: r.id,
-                  url: afterImageUrl,
-                  imageType: 'after' as const,
-                  createdAt: now
-                }
-              ];
-              return {
-                ...r,
-                status: 'Resolved' as const,
-                budgetSpent: r.budgetEstimated,
-                updatedAt: now,
-                images: updatedImages
+              return { 
+                ...r, 
+                assignedDepartment: department, 
+                priority, 
+                status, 
+                updatedAt: now 
               };
             }
             return r;
           });
 
+          const commentObj: Comment = {
+            id: 'c-' + Math.random().toString(36).substring(2, 11),
+            reportId,
+            userId: user.id,
+            userName: user.name,
+            userRole: user.role,
+            content: `Manual routing to ${department} completed by Administrator. Urgent remarks: "${remarks}"`,
+            isOfficialUpdate: true,
+            createdAt: now
+          };
+
           const targetReport = state.reports.find(r => r.id === reportId);
           const newNotifications = [...state.notifications];
           if (targetReport) {
             newNotifications.unshift({
-              id: 'n-resolved-' + Math.random().toString(36).substring(2, 11),
+              id: 'n-assign-' + Math.random().toString(36).substring(2, 11),
               userId: targetReport.reporterId,
-              title: 'Civic Issue Resolved!',
-              message: `Fantastic! The issue "${targetReport.title}" has been successfully resolved. Thank you for your support.`,
+              title: `Report Assigned to Mahashakha`,
+              message: `Your report "${targetReport.title}" has been manually routed to "${department}". Remarks: ${remarks}`,
+              type: 'info',
+              isRead: false,
+              createdAt: now
+            });
+          }
+
+          return { 
+            reports, 
+            comments: [...state.comments, commentObj], 
+            notifications: newNotifications 
+          };
+        });
+      },
+
+      resolveReportByDepartment: async (reportId, remarks, proofUrl) => {
+        const now = new Date().toISOString();
+        const user = get().currentUser;
+
+        if (get().isOnline) {
+          try {
+            const { default: reportService } = await import('../services/reportService');
+            await reportService.updateReportStatus(reportId, 'Resolved', remarks, user.id);
+          } catch (err) {
+            console.error('Error resolving report in DB:', err);
+          }
+        }
+
+        set((state) => {
+          const reports = state.reports.map((r) => {
+            if (r.id === reportId) {
+              const updatedImages = [...r.images];
+              if (proofUrl) {
+                updatedImages.push({
+                  id: 'img-res-' + Math.random().toString(36).substring(2, 11),
+                  reportId: r.id,
+                  url: proofUrl,
+                  imageType: 'after',
+                  createdAt: now
+                });
+              }
+              return { 
+                ...r, 
+                status: 'Resolved' as const, 
+                budgetSpent: r.budgetEstimated, 
+                images: updatedImages,
+                updatedAt: now 
+              };
+            }
+            return r;
+          });
+
+          const commentObj: Comment = {
+            id: 'c-' + Math.random().toString(36).substring(2, 11),
+            reportId,
+            userId: user.id,
+            userName: user.name,
+            userRole: user.role,
+            content: `Resolved by ${user.department || 'Department Officer'}. Completion remarks: "${remarks}"`,
+            isOfficialUpdate: true,
+            createdAt: now
+          };
+
+          const targetReport = state.reports.find(r => r.id === reportId);
+          const newNotifications = [...state.notifications];
+          if (targetReport) {
+            newNotifications.unshift({
+              id: 'n-resolve-' + Math.random().toString(36).substring(2, 11),
+              userId: targetReport.reporterId,
+              title: `Civic Problem Resolved`,
+              message: `Your reported problem "${targetReport.title}" has been marked as RESOLVED by the ${user.department || 'department'}. Remarks: ${remarks}`,
               type: 'success',
               isRead: false,
               createdAt: now
             });
           }
 
-          return { assignments, reports, notifications: newNotifications };
+          return { 
+            reports, 
+            comments: [...state.comments, commentObj], 
+            notifications: newNotifications 
+          };
         });
       },
 
@@ -445,7 +494,7 @@ export const useCivicStore = create<CivicState>()(
               });
               return {
                 ...r,
-                status: 'Reopened' as const,
+                status: 'Under_Review' as const,
                 description: `${r.description}\n\n[Reopened on ${now.split('T')[0]}: ${notes}]`,
                 updatedAt: now,
                 images: updatedImages

@@ -6,7 +6,7 @@ import { aiVerificationService } from '../../services/aiVerificationService';
 import { DuplicateChecker } from '../../features/ai/DuplicateChecker';
 import { AiImageScanner } from '../../features/ai/AiImageScanner';
 import type { ReportCategory } from '../../types';
-import { Upload, MapPin, Loader, Info, Image as ImageIcon } from 'lucide-react';
+import { Upload, MapPin, Loader, Info, Image as ImageIcon, Video, Trash } from 'lucide-react';
 
 interface GPSReading {
   lat: number;
@@ -28,6 +28,11 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const [aiVerified, setAiVerified] = useState(false);
   const [trustScore, setTrustScore] = useState<number>(100);
   const [aiAnalysisDetails, setAiAnalysisDetails] = useState<any>(null);
+
+  // Ghorahi Project Specific Upload states (5 Images Max, 60s Video Max 100MB)
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [videoUrl, setVideoUrl] = useState<string>('');
+  const [videoError, setVideoError] = useState<string | null>(null);
 
   // Geolocation states
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -85,7 +90,6 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
         },
         (error) => {
           console.warn('GPS single sample request failed, collecting synthetic drift:', error);
-          // Drift mock around Ghorahi Bazar coordinates to test smooth accuracy averaging
           const baseLat = 28.062;
           const baseLng = 82.484;
           const driftLat = (Math.random() - 0.5) * 0.0003;
@@ -119,17 +123,68 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (uploadedImages.length >= 5) {
+      alert("Maximum of 5 images allowed.");
+      return;
+    }
+
     setAiVerified(false);
     const reader = new FileReader();
     reader.onloadend = () => {
-      setImgUrl(reader.result as string);
+      const base64 = reader.result as string;
+      setUploadedImages(prev => [...prev, base64]);
+      setImgUrl(base64); // Use latest as main preview
     };
     reader.readAsDataURL(file);
   };
 
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setVideoError(null);
+
+    // Verify format
+    const allowedExtensions = ['mp4', 'mov', 'avi'];
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!ext || !allowedExtensions.includes(ext)) {
+      setVideoError("Format must be MP4, MOV, or AVI.");
+      return;
+    }
+
+    // Verify size (Max 100MB)
+    const maxSize = 100 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setVideoError("Video size exceeds 100 MB limit.");
+      return;
+    }
+
+    // Verify duration (Max 60s)
+    const tempVideo = document.createElement('video');
+    tempVideo.preload = 'metadata';
+    tempVideo.onloadedmetadata = () => {
+      window.URL.revokeObjectURL(tempVideo.src);
+      if (tempVideo.duration > 60) {
+        setVideoError("Video duration exceeds 60 seconds.");
+      } else {
+        // Set mock/local preview
+        setVideoUrl('https://www.w3schools.com/html/mov_bbb.mp4'); // standard mock stream
+      }
+    };
+    tempVideo.src = window.URL.createObjectURL(file);
+  };
+
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+    if (index === 0 && uploadedImages.length > 1) {
+      setImgUrl(uploadedImages[1]);
+    } else if (uploadedImages.length <= 1) {
+      setImgUrl('');
+    }
+  };
+
   useEffect(() => {
     if (coords) {
-      // Trigger duplicate checklist overlay if report category or coordinates match closely
       setShowDuplicateOverlay(true);
     }
   }, [category, coords]);
@@ -137,6 +192,14 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!coords) return;
+
+    const isEmergency = ['Accident / Traffic Emergency', 'Fire Emergency', 'Public Safety / Crime'].includes(category);
+
+    // Anti-Fake rule: Emergency level requires at least one image or video evidence
+    if (isEmergency && uploadedImages.length === 0 && !videoUrl) {
+      alert("Validation Error: Proof of evidence (image or video) is mandatory for submitting an Emergency complaint.");
+      return;
+    }
 
     submitReport({
       title,
@@ -147,8 +210,8 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       address,
       municipalityId: muni,
       wardId: ward,
-      isEmergency: category === 'Emergency',
-      budgetEstimated: category === 'Emergency' ? 200000 : 45000,
+      isEmergency,
+      budgetEstimated: isEmergency ? 250000 : 45000,
       budgetSpent: 0,
       imageUrl: imgUrl || undefined,
       aiAnalysis: aiAnalysisDetails ? {
@@ -186,7 +249,17 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             onChange={(e) => setCategory(e.target.value as ReportCategory)} 
             className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-750 font-bold focus:bg-white focus:outline-none"
           >
-            {['Road Damage', 'Potholes', 'Garbage', 'Water Supply', 'Drainage', 'Electricity', 'Street Lights', 'Environmental Issues', 'Public Safety', 'Infrastructure Problems', 'Other', 'Emergency'].map(cat => (
+            {[
+              'Garbage / Waste Management', 
+              'Road Damage', 
+              'Water Supply Problems', 
+              'Drainage / Sewer', 
+              'Street Light / Electricity', 
+              'Public Infrastructure', 
+              'Accident / Traffic Emergency', 
+              'Fire Emergency', 
+              'Public Safety / Crime'
+            ].map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
@@ -196,8 +269,14 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             <div className="flex gap-2">
               <label className="flex-1 flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 border-dashed rounded-xl p-3 text-xs text-slate-500 hover:text-slate-800 cursor-pointer hover:border-blue-500/50 transition-colors font-bold">
                 <Upload className="w-4 h-4 text-blue-600" />
-                <span>Upload Image File</span>
+                <span>Upload Image ({uploadedImages.length}/5)</span>
                 <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+              </label>
+
+              <label className="flex-1 flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 border-dashed rounded-xl p-3 text-xs text-slate-500 hover:text-slate-800 cursor-pointer hover:border-blue-500/50 transition-colors font-bold">
+                <Video className="w-4 h-4 text-blue-650" />
+                <span>{videoUrl ? 'Video Uploaded' : 'Upload Video (Max 60s)'}</span>
+                <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
               </label>
 
               <button
@@ -219,6 +298,26 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                 )}
               </button>
             </div>
+
+            {/* Uploaded Thumbnails Queue */}
+            {uploadedImages.length > 0 && (
+              <div className="flex gap-2 flex-wrap bg-slate-50 p-2 rounded-xl border border-slate-200/50">
+                {uploadedImages.map((img, idx) => (
+                  <div key={idx} className="relative w-12 h-12 rounded border border-slate-250 overflow-hidden group">
+                    <img src={img} alt="preview" className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => removeImage(idx)} className="absolute inset-0 bg-red-650/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Trash className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {videoError && (
+              <div className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-150 px-3 py-1.5 rounded-lg">
+                ⚠️ {videoError}
+              </div>
+            )}
 
             {gpsError && (
               <div className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200/60 px-3.5 py-2.5 rounded-xl leading-relaxed">
