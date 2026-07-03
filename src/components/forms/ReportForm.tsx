@@ -34,18 +34,18 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const [videoUrl, setVideoUrl] = useState<string>('');
   const [videoError, setVideoError] = useState<string | null>(null);
 
-  // Geolocation states
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [muni, setMuni] = useState('');
-  const [ward, setWard] = useState<number>(0);
-  const [address, setAddress] = useState('');
-  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  // Initialize coordinates to Ghorahi center (default fallback so user is never locked out of submissions)
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>({ lat: 28.062, lng: 82.484 });
+  const [muni, setMuni] = useState('Ghorahi');
+  const [ward, setWard] = useState<number>(15);
+  const [address, setAddress] = useState('Ghorahi Bazar Ward 15, Dang District, Nepal');
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(5.0);
   const [loadingGps, setLoadingGps] = useState(false);
   const [gpsSampleCount, setGpsSampleCount] = useState(0);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [isLowAccuracyWarning, setIsLowAccuracyWarning] = useState(false);
 
-  // Duplicate Check trigger
+  // Duplicate Check triggers
   const [showDuplicateOverlay, setShowDuplicateOverlay] = useState(false);
 
   const handleMapClick = (lat: number, lng: number, accuracy: number = 2.0) => {
@@ -183,11 +183,20 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     }
   };
 
+  // Reset duplicate overlay when category or coords change
   useEffect(() => {
     if (coords) {
       setShowDuplicateOverlay(true);
     }
   }, [category, coords]);
+
+  // Determine if a real duplicate is present in local cache
+  const hasDuplicate = coords ? reports.some((r) => {
+    if (r.category !== category) return false;
+    const latDiff = Math.abs(r.latitude - coords.lat);
+    const lngDiff = Math.abs(r.longitude - coords.lng);
+    return latDiff < 0.005 && lngDiff < 0.005 && r.status !== 'Resolved' && r.status !== 'Closed';
+  }) : false;
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -274,7 +283,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
               </label>
 
               <label className="flex-1 flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 border-dashed rounded-xl p-3 text-xs text-slate-500 hover:text-slate-800 cursor-pointer hover:border-blue-500/50 transition-colors font-bold">
-                <Video className="w-4 h-4 text-blue-650" />
+                <Video className="w-4 h-4 text-blue-655" />
                 <span>{videoUrl ? 'Video Uploaded' : 'Upload Video (Max 60s)'}</span>
                 <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
               </label>
@@ -305,7 +314,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
                 {uploadedImages.map((img, idx) => (
                   <div key={idx} className="relative w-12 h-12 rounded border border-slate-250 overflow-hidden group">
                     <img src={img} alt="preview" className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => removeImage(idx)} className="absolute inset-0 bg-red-650/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="button" onClick={() => removeImage(idx)} className="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <Trash className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -314,7 +323,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             )}
 
             {videoError && (
-              <div className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-150 px-3 py-1.5 rounded-lg">
+              <div className="text-[10px] font-bold text-red-650 bg-red-50 border border-red-150 px-3 py-1.5 rounded-lg">
                 ⚠️ {videoError}
               </div>
             )}
@@ -368,7 +377,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             <LeafletMap 
               reports={reports} 
               onSelectCoords={(lat, lng) => handleMapClick(lat, lng, 2.0)} 
-              selectedCoords={coords} 
+              selectedCoords={coords || undefined} 
             />
           </div>
           {coords && (
@@ -385,7 +394,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
         </div>
       </div>
 
-      {coords && showDuplicateOverlay && (
+      {coords && hasDuplicate && showDuplicateOverlay && (
         <DuplicateChecker 
           category={category} 
           latitude={coords.lat} 
@@ -397,7 +406,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
 
       <button 
         type="submit" 
-        disabled={!coords || (imgUrl && !aiVerified) || showDuplicateOverlay} 
+        disabled={!coords || (imgUrl && !aiVerified) || (hasDuplicate && showDuplicateOverlay)} 
         className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-transparent font-bold py-2.5 rounded-xl text-xs transition-colors shadow-sm text-white cursor-pointer"
       >
         Submit Report
