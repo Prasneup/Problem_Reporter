@@ -7,16 +7,16 @@ export const DevPanel: React.FC = () => {
   const { currentUser, setCurrentUser, isOnline, setOnlineStatus } = useCivicStore();
 
   const mockUsers = [
-    { key: 'citizen', label: 'Citizen (Yogesh Pulami)' },
-    { key: 'admin', label: 'Admin (Ghorahi Admin)' },
-    { key: 'sanitation_officer', label: 'Sanitation Officer (garbage@)' },
-    { key: 'roads_officer', label: 'Roads Officer (roads@)' },
-    { key: 'water_officer', label: 'Water Officer (water@)' },
-    { key: 'drainage_officer', label: 'Drainage Officer (drainage@)' },
-    { key: 'electrical_officer', label: 'Electrical Officer (electric@)' },
-    { key: 'police_officer', label: 'Traffic Police Officer (police@)' },
-    { key: 'safety_officer', label: 'Nepal Police Officer (safety@)' },
-    { key: 'fire_officer', label: 'Fire Officer (fire@)' }
+    { key: 'citizen', label: `Citizen (${currentUser.role === 'Citizen' ? currentUser.name : 'Yogesh Pulami'})` },
+    { key: 'admin', label: `Admin (${currentUser.role === 'Admin' ? currentUser.name : 'Ghorahi Admin'})` },
+    { key: 'sanitation_officer', label: `Sanitation Officer (${currentUser.department === 'Sanitation / Waste Management Mahashakha' ? currentUser.name : 'Ramesh Chaudhary'})` },
+    { key: 'roads_officer', label: `Roads Officer (${currentUser.department === 'Road & Infrastructure Division' ? currentUser.name : 'Binod Bhandari'})` },
+    { key: 'water_officer', label: `Water Officer (${currentUser.department === 'Water Supply & Irrigation Division' ? currentUser.name : 'Krishna Raj Oli'})` },
+    { key: 'drainage_officer', label: `Drainage Officer (${currentUser.department === 'Sewerage & Drainage Division' ? currentUser.name : 'Sita Dahal'})` },
+    { key: 'electrical_officer', label: `Electrical Officer (${currentUser.department === 'Street Lighting & Energy Division' ? currentUser.name : 'Madan Shrestha'})` },
+    { key: 'police_officer', label: `Traffic Police Officer (${currentUser.department === 'Traffic Police Division' ? currentUser.name : 'Inspector Thapa'})` },
+    { key: 'safety_officer', label: `Nepal Police Officer (${currentUser.department === 'Nepal Police (Emergency)' ? currentUser.name : 'DSP KC'})` },
+    { key: 'fire_officer', label: `Fire Officer (${currentUser.department === 'Fire Emergency Services' ? currentUser.name : 'Fire Chief Basnet'})` }
   ];
 
   const handleReset = () => {
