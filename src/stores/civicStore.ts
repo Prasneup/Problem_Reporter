@@ -132,8 +132,13 @@ export const useCivicStore = create<CivicState>()(
         if (get().isOnline) {
           try {
             if (imgUrl && imgUrl.startsWith('data:')) {
-              const { default: storageService } = await import('../services/storageService');
-              imgUrl = await storageService.uploadReportImage(imgUrl);
+              try {
+                const { default: storageService } = await import('../services/storageService');
+                imgUrl = await storageService.uploadReportImage(imgUrl);
+              } catch (storageErr) {
+                console.warn('Supabase storage upload failed, falling back to public placeholder:', storageErr);
+                imgUrl = 'https://images.unsplash.com/photo-1594913785162-e6785b4938a2?w=800&auto=format&fit=crop&q=60';
+              }
             }
             const { default: reportService } = await import('../services/reportService');
             const submitted = await reportService.submitReport({

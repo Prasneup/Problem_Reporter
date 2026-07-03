@@ -31,21 +31,42 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
 
-    // Set view centered on Dang with CartoDB Voyager light tiles for premium UX
+    // Set view centered on Ghorahi
     const map = L.map(mapRef.current, { zoomControl: false }).setView(
       [DANG_CENTER.lat, DANG_CENTER.lng],
-      11
+      13
     );
     mapInstance.current = map;
 
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // Using CartoDB Voyager tiles (modern, premium clean light layout)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    // 1. Define Layer Views (Light Premium, Satellite, and Standard Streets)
+    const lightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       subdomains: 'abcd',
       maxZoom: 20
-    }).addTo(map);
+    });
+
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, USDA, USGS, and the GIS User Community',
+      maxZoom: 19
+    });
+
+    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    });
+
+    // Add Light layer as default view
+    lightLayer.addTo(map);
+
+    // 2. Add Native Leaflet Layer Switcher Control in top-right
+    const baseLayers = {
+      "Light Premium": lightLayer,
+      "Satellite View": satelliteLayer,
+      "Standard Streets": streetLayer
+    };
+    L.control.layers(baseLayers, undefined, { position: 'topright', collapsed: false }).addTo(map);
 
     markersGroup.current = L.featureGroup().addTo(map);
     heatGroup.current = L.featureGroup();
