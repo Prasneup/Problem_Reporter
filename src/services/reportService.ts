@@ -225,8 +225,17 @@ export const reportService = {
     };
   },
 
-  async updateReportStatus(reportId: string, status: string, notes?: string, verifierId?: string): Promise<void> {
-    const updatePayload = { status, updated_at: new Date().toISOString() };
+  async updateReportStatus(reportId: string, status: string, notes?: string, verifierId?: string, assignedDepartment?: string, priority?: string, budgetSpent?: number): Promise<void> {
+    const updatePayload: any = { status, updated_at: new Date().toISOString() };
+    if (assignedDepartment !== undefined) {
+      updatePayload.assigned_department = assignedDepartment;
+    }
+    if (priority !== undefined) {
+      updatePayload.priority = priority;
+    }
+    if (budgetSpent !== undefined) {
+      updatePayload.budget_spent = budgetSpent;
+    }
 
     await supabase
       .from('reports')

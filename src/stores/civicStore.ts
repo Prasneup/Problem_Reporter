@@ -356,7 +356,7 @@ export const useCivicStore = create<CivicState>()(
           try {
             const { default: reportService } = await import('../services/reportService');
             // Update in DB
-            await reportService.updateReportStatus(reportId, status, `Assigned to ${department}. Remarks: ${remarks}`, user.id);
+            await reportService.updateReportStatus(reportId, status, `Assigned to ${department}. Remarks: ${remarks}`, user.id, department, priority);
           } catch (err) {
             console.error('Error updating assignment in DB:', err);
           }
@@ -416,7 +416,9 @@ export const useCivicStore = create<CivicState>()(
         if (get().isOnline) {
           try {
             const { default: reportService } = await import('../services/reportService');
-            await reportService.updateReportStatus(reportId, 'Resolved', remarks, user.id);
+            const target = get().reports.find(r => r.id === reportId);
+            const budgetSpent = target ? target.budgetEstimated : undefined;
+            await reportService.updateReportStatus(reportId, 'Resolved', remarks, user.id, undefined, undefined, budgetSpent);
           } catch (err) {
             console.error('Error resolving report in DB:', err);
           }
