@@ -9,6 +9,7 @@ import Contact from './pages/Contact';
 import { useCivicStore } from './stores/civicStore';
 import { supabase } from './lib/supabase';
 import authService from './services/authService';
+import { MOCK_PROFILES } from './stores/mockData';
 
 function App() {
   const { loadInitialData, setCurrentUser } = useCivicStore();
@@ -21,6 +22,12 @@ function App() {
           setTimeout(async () => {
             try {
               const profile = await authService.getProfile(session.user.id);
+              // Align sandbox profile ID with real Supabase UUID to prevent filtering mismatches
+              MOCK_PROFILES.citizen.id = session.user.id;
+              MOCK_PROFILES.citizen.name = profile.name;
+              MOCK_PROFILES.citizen.email = profile.email;
+              MOCK_PROFILES.citizen.phone = profile.phone;
+
               setCurrentUser(profile);
               loadInitialData();
             } catch (err) {
@@ -37,6 +44,12 @@ function App() {
       if (session?.user) {
         try {
           const profile = await authService.getProfile(session.user.id);
+          // Align sandbox profile ID with real Supabase UUID to prevent filtering mismatches
+          MOCK_PROFILES.citizen.id = session.user.id;
+          MOCK_PROFILES.citizen.name = profile.name;
+          MOCK_PROFILES.citizen.email = profile.email;
+          MOCK_PROFILES.citizen.phone = profile.phone;
+
           setCurrentUser(profile);
           loadInitialData();
         } catch (err) {
@@ -51,7 +64,7 @@ function App() {
     };
   }, [loadInitialData, setCurrentUser]);
 
-  // Real-time polling to fetch updates from database (e.g. reports submitted by friends on other devices)
+  // Real-time polling to fetch updates from database
   useEffect(() => {
     const pollInterval = setInterval(() => {
       loadInitialData();
@@ -66,10 +79,10 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/" element={<AppLayout />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/app/*" element={<AppLayout />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );
