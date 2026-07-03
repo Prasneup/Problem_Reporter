@@ -114,9 +114,9 @@ export const MOCK_PROFILES: Record<string, UserProfile> = {
 export const MOCK_BUDGETS: WardBudget[] = [
   { id: 'b1', municipalityId: 'ghorahi', wardId: 15, allocated: 5000000, spent: 3200000 },
   { id: 'b2', municipalityId: 'ghorahi', wardId: 2, allocated: 3500000, spent: 1100000 },
-  { id: 'b3', municipalityId: 'tulsipur', wardId: 5, allocated: 4500000, spent: 2800000 },
-  { id: 'b4', municipalityId: 'tulsipur', wardId: 12, allocated: 3000000, spent: 900000 },
-  { id: 'b5', municipalityId: 'lamahi', wardId: 3, allocated: 2500000, spent: 2100000 }
+  { id: 'b3', municipalityId: 'ghorahi', wardId: 5, allocated: 4500000, spent: 2800000 },
+  { id: 'b4', municipalityId: 'ghorahi', wardId: 12, allocated: 3000000, spent: 900000 },
+  { id: 'b5', municipalityId: 'ghorahi', wardId: 3, allocated: 2500000, spent: 2100000 }
 ];
 
 export const MOCK_REPORTS: Report[] = [
@@ -164,10 +164,10 @@ export const MOCK_REPORTS: Report[] = [
     title: 'Illegal Waste Dumping behind Lamahi Market',
     description: 'A large heap of municipal waste has been piled behind the vegetable market, leading to severe odor.',
     category: 'Garbage / Waste Management',
-    latitude: 27.878,
-    longitude: 82.552,
-    address: 'Vegetable Market, Lamahi-3, Dang',
-    municipalityId: 'lamahi',
+    latitude: 28.068,
+    longitude: 82.486,
+    address: 'Vegetable Market, Ghorahi-3, Dang',
+    municipalityId: 'ghorahi',
     wardId: 3,
     reporterId: 'p-citizen',
     status: 'Resolved',
