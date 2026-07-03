@@ -56,7 +56,7 @@ export const authService = {
   },
 
   getDbMuniId(localMuniId: string): string | undefined {
-    return municipalityIdCache[localMuniId];
+    return municipalityIdCache[localMuniId.toLowerCase()];
   },
 
   getDbWardId(dbMuniId: string, wardNumber: number): string | undefined {
