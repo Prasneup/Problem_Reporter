@@ -94,7 +94,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
 
   const activeComplaint = reports.find(r => r.id === activeComplaintId);
 
-  // Dynamically calculate status breakdowns for Hello Sarkar 6-State Grievance Pipeline
+  // Dynamically calculate status breakdowns for the Grievance Pipeline
   const totalCount = reports.length || 1;
   const registeredCount = reports.filter(r => r.status === 'Submitted').length;
   const resolvedCount = reports.filter(r => r.status === 'Resolved').length;
@@ -228,7 +228,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
   return (
     <div className="space-y-6 font-sans select-none text-slate-700 animate-in fade-in duration-200">
       
-      {/* Hello Sarkar Style Top Info Bar */}
+      {/* Top Info Bar */}
       <div className="bg-blue-800 text-white rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-4 shadow-sm border border-blue-900/50">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-red-500" />
@@ -275,7 +275,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
         </div>
       </div>
 
-      {/* Hello Sarkar Section: Channels Available for Complaints */}
+      {/* Section: Channels Available for Complaints */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
         <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2.5">
           {language === 'en' ? 'Channels available for filing complaints:' : 'गुनासो दर्ताका लागि उपलब्ध माध्यमहरु:'}
@@ -302,7 +302,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
         </div>
       </div>
 
-      {/* Hello Sarkar 6-State Grievance Pipeline */}
+      {/* Grievance Pipeline Stats */}
       <div className="space-y-4">
         <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
           {language === 'en' ? 'Latest Status of Complaints Received' : 'दर्ता भएका गुनासोहरुको पछिल्लो स्थिति'}
@@ -607,7 +607,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
 
       </div>
 
-      {/* Nepal Hello Sarkar Contact Information Footer */}
+      {/* Contact Information Footer */}
       <footer className="bg-white border border-slate-250 rounded-2xl p-6 shadow-sm font-sans select-none leading-relaxed">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-2 space-y-3">
@@ -618,7 +618,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
               <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wide">Ghorahi Sub-Metropolitan Executive</h4>
             </div>
             <p className="text-[10px] text-slate-450 font-bold leading-relaxed">
-              "Ghorahi Smart Civic Portal" is a grievance redressal platform designed to address public complaints regarding local infrastructure, sanitation, utilities, and emergency issues directly to Ghorahi municipal authorities, inspired by Nepal's central "Hello Government" framework.
+              "Ghorahi Smart Civic Portal" is a grievance redressal platform designed to help citizens and administrative bodies engage, allowing the community to report and resolve public issues regarding infrastructure, sanitation, utilities, and emergency services directly with Ghorahi municipal authorities.
             </p>
             <p className="text-[10px] text-slate-450 font-bold">
               Office of the Municipal Executive, Ghorahi, Dang, Lumbini Province, Nepal
