@@ -4,7 +4,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   en: {
     appName: 'Ghorahi Smart City Portal',
     tagline: 'Digital Governance & Problem Reporting Platform',
-    subhead: 'Ghorahi Sub-Metropolitan City',
+    subhead: 'Office of the Municipal Executive | Ghorahi',
     citizen: 'Citizen',
     verifier: 'Community Verifier',
     inspector: 'Field Inspector',
@@ -61,7 +61,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   ne: {
     appName: 'घोराही स्मार्ट सिटी पोर्टल',
     tagline: 'डिजिटल सुशासन र समस्या दर्ता प्लेटफर्म',
-    subhead: 'घोराही उपमहानगरपालिका',
+    subhead: 'नगर कार्यपालिकाको कार्यालय | घोराही',
     citizen: 'नागरिक',
     verifier: 'समुदाय प्रमाणीकरणकर्ता',
     inspector: 'क्षेत्रीय निरीक्षक',
