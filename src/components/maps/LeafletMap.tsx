@@ -59,6 +59,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   const boundaryGroup = useRef<L.FeatureGroup | null>(null);
   const placementMarker = useRef<L.Marker | null>(null);
   const radiusCircle = useRef<L.Circle | null>(null);
+  const boundsFitted = useRef(false);
 
   // States
   const [localHeatmap, setLocalHeatmap] = useState(initialShowHeatmap);
@@ -111,6 +112,17 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     };
   }, [onSelectCoords]);
 
+  // Dynamically fit map bounds on initial load of active pins
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || reports.length === 0 || boundsFitted.current) return;
+
+    const latLngs = reports.map((r) => L.latLng(r.latitude, r.longitude));
+    const bounds = L.latLngBounds(latLngs);
+    map.fitBounds(bounds, { padding: [55, 55], maxZoom: 14 });
+    boundsFitted.current = true;
+  }, [reports]);
+
   // Handle Zoom operations via Custom Buttons
   const handleZoomIn = () => {
     mapInstance.current?.zoomIn();
@@ -120,9 +132,18 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     mapInstance.current?.zoomOut();
   };
 
-  // Recenter on Ghorahi
+  // Recenter on cluster of active pins, or default center if none
   const handleRecenter = () => {
-    mapInstance.current?.setView([DANG_CENTER.lat, DANG_CENTER.lng], 13);
+    const map = mapInstance.current;
+    if (!map) return;
+
+    if (reports.length > 0) {
+      const latLngs = reports.map((r) => L.latLng(r.latitude, r.longitude));
+      const bounds = L.latLngBounds(latLngs);
+      map.fitBounds(bounds, { padding: [55, 55], maxZoom: 14 });
+    } else {
+      map.setView([DANG_CENTER.lat, DANG_CENTER.lng], 13);
+    }
   };
 
   // Update selection marker
