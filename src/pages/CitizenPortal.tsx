@@ -720,7 +720,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
               <div className="p-4 pl-6 border-b border-slate-150 flex items-center justify-between flex-shrink-0 bg-white z-10">
                 <div>
                   <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Public Discussion Logs</h4>
-                  <p className="text-[9px] text-slate-400 font-bold mt-0.5">Citizens and ward officers updates</p>
+                  <p className="text-[9px] text-slate-400 font-bold mt-0.5">Citizens and officials updates</p>
                 </div>
                 <button 
                   onClick={() => {

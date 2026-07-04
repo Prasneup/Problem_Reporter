@@ -43,11 +43,13 @@ export const AiImageScanner: React.FC<AiImageScannerProps> = ({
   const [trust, setTrust] = useState<TrustScoreSummary | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const scannedImageUrlRef = useRef<string | null>(null);
 
   if (imageUrl !== prevImageUrl) {
     setPrevImageUrl(imageUrl);
     setScanning(true);
     setProgress(0);
+    scannedImageUrlRef.current = null;
   }
 
   const onAnalysisCompleteRef = useRef(onAnalysisComplete);
@@ -59,6 +61,45 @@ export const AiImageScanner: React.FC<AiImageScannerProps> = ({
   useEffect(() => {
     let active = true;
     let timer: any;
+
+    if (scannedImageUrlRef.current === imageUrl) {
+      const fp = aiVerificationService.generateDeviceFingerprint();
+      const imgResult = aiVerificationService.analyzeImage(imageUrl, category);
+      const fraudResult = aiVerificationService.runFraudChecks(
+        coords?.lat || 28.067,
+        coords?.lng || 82.478,
+        gpsAccuracy,
+        imageUrl,
+        fp
+      );
+
+      const gpsReliability = Math.max(10, 100 - gpsAccuracy);
+      const trustSummary = aiVerificationService.calculateTrustScore(
+        gpsReliability,
+        imgResult.authenticityScore,
+        imgResult.categoryConfidence,
+        userReputation,
+        fraudResult
+      );
+
+      setAnalysis(imgResult);
+      setFraud(fraudResult);
+      setTrust(trustSummary);
+      setScanning(false);
+
+      onAnalysisCompleteRef.current({
+        category: imgResult.category,
+        confidence: imgResult.categoryConfidence / 100,
+        qualityScore: imgResult.qualityScore / 100,
+        issuesDetected: imgResult.issuesDetected,
+        isFake: imgResult.isFake,
+        isBlurry: imgResult.isBlurry,
+        trustScore: trustSummary.overallTrustScore,
+        analysisDetails: imgResult
+      });
+      return;
+    }
+
     setScanning(true);
     setProgress(0);
 
@@ -100,6 +141,8 @@ export const AiImageScanner: React.FC<AiImageScannerProps> = ({
           userReputation,
           fraudResult
         );
+
+        scannedImageUrlRef.current = imageUrl;
 
         setAnalysis(imgResult);
         setFraud(fraudResult);

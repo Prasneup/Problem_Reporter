@@ -220,7 +220,7 @@ export const reportService = {
       userName: commentRow.profiles?.name || 'Anonymous',
       userRole: (commentRow.profiles?.role || 'Citizen') as UserRole,
       content: commentRow.content,
-      isOfficialUpdate: ['Ward Officer', 'Municipality Officer', 'District Administrator', 'Super Admin'].includes(commentRow.profiles?.role || ''),
+      isOfficialUpdate: ['Admin', 'Department Officer'].includes(commentRow.profiles?.role || ''),
       createdAt: commentRow.created_at
     };
   },
@@ -270,7 +270,7 @@ export const reportService = {
       userName: commentRow.profiles?.name || 'Anonymous',
       userRole: (commentRow.profiles?.role || 'Citizen') as UserRole,
       content: commentRow.content,
-      isOfficialUpdate: ['Ward Officer', 'Municipality Officer', 'District Administrator', 'Super Admin'].includes(commentRow.profiles?.role || ''),
+      isOfficialUpdate: ['Admin', 'Department Officer'].includes(commentRow.profiles?.role || ''),
       createdAt: commentRow.created_at
     }));
   },

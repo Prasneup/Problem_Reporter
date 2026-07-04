@@ -424,6 +424,14 @@ export const useCivicStore = create<CivicState>()(
             const target = get().reports.find(r => r.id === reportId);
             const budgetSpent = target ? target.budgetEstimated : undefined;
             await reportService.updateReportStatus(reportId, 'Resolved', remarks, user.id, undefined, undefined, budgetSpent);
+            if (proofUrl) {
+              const { supabase } = await import('../lib/supabase');
+              await supabase.from('report_images').insert({
+                report_id: reportId,
+                url: proofUrl,
+                image_type: 'after'
+              });
+            }
           } catch (err) {
             console.error('Error resolving report in DB:', err);
           }
