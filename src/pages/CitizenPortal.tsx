@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import L from 'leaflet';
 import { useCivicStore } from '../stores/civicStore';
 import { LeafletMap } from '../components/maps/LeafletMap';
 import { ReportForm } from '../components/forms/ReportForm';
@@ -7,10 +8,10 @@ import { useTranslation } from '../hooks/useTranslation';
 import {
   AlertTriangle, Sun, Clock, Users, Phone, Map, FileText, 
   MessageCircle, Info, CheckCircle, RefreshCw, EyeOff, Award, Globe, 
-  MessageSquare, Shield, ArrowRight, ThumbsUp, Send, X
+  MessageSquare, Shield, ArrowRight, ThumbsUp, Send, X, MapPin
 } from 'lucide-react';
 import ghorahiBanner from '../assets/ghorahi_banner.jpg';
-import type { Report } from '../types';
+
 
 interface CitizenPortalProps {
   activeView: string;
@@ -27,6 +28,23 @@ const CATEGORY_IMAGES: Record<string, string> = {
   default: 'https://images.unsplash.com/photo-1584467541268-b040f83be3fd?w=400&auto=format&fit=crop&q=60'
 };
 
+// Self-contained coordinates display map inside detail modal
+const ModalMap: React.FC<{ latitude: number; longitude: number }> = ({ latitude, longitude }) => {
+  const mapRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false }).setView([latitude, longitude], 14);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+    L.marker([latitude, longitude]).addTo(map);
+    return () => {
+      map.remove();
+    };
+  }, [latitude, longitude]);
+
+  return <div ref={mapRef} className="w-full h-36 rounded-xl overflow-hidden border border-slate-200 mt-2 shadow-inner" />;
+};
+
 export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCurrentTab }) => {
   const { t, language } = useTranslation();
   const { reports, currentUser, reopenReport, supportReport, addComment, comments } = useCivicStore();
@@ -38,7 +56,9 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
 
   // Local interaction states
   const [likedReports, setLikedReports] = useState<Record<string, boolean>>({});
-  const [activeCommentReport, setActiveCommentReport] = useState<Report | null>(null);
+  
+  // Refactored State Pattern: Explicit Selected Complaint Id tracking
+  const [activeComplaintId, setActiveComplaintId] = useState<string | null>(null);
   const [newCommentText, setNewCommentText] = useState('');
 
   // Local dialog overlays
@@ -54,7 +74,8 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
     setReopenImg('');
   };
 
-  const handleLike = (reportId: string) => {
+  const handleLike = (reportId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // prevent opening details modal
     if (likedReports[reportId]) return;
     setLikedReports(prev => ({ ...prev, [reportId]: true }));
     supportReport(reportId);
@@ -62,14 +83,16 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
 
   const handleSendComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeCommentReport || !newCommentText.trim()) return;
+    if (!activeComplaintId || !newCommentText.trim()) return;
     try {
-      await addComment(activeCommentReport.id, newCommentText.trim());
+      await addComment(activeComplaintId, newCommentText.trim());
       setNewCommentText('');
     } catch (err) {
       console.error('Error posting comment:', err);
     }
   };
+
+  const activeComplaint = reports.find(r => r.id === activeComplaintId);
 
   // Dynamically calculate status breakdowns for Hello Sarkar 6-State Grievance Pipeline
   const totalCount = reports.length || 1;
@@ -242,7 +265,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
             <div className="space-y-1">
               <div className="text-3xl font-extrabold text-slate-800 font-sans tracking-tight">32°C</div>
               <div className="text-xs font-extrabold text-slate-700">{language === 'en' ? 'Mostly Sunny' : 'सामान्यतया सफा'}</div>
-              <div className="text-[10px] text-slate-400 font-bold">Ghorahi, Dang</div>
+              <div className="text-[10px] text-slate-450 font-bold">Ghorahi, Dang</div>
             </div>
             <Sun className="w-10 h-10 text-amber-500 animate-spin-slow" />
           </div>
@@ -461,7 +484,8 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
               return (
                 <div 
                   key={comp.id} 
-                  className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row min-h-[170px]"
+                  onClick={() => setActiveComplaintId(comp.id)}
+                  className="bg-white border border-slate-200 hover:border-blue-400 hover:shadow-md cursor-pointer hover:scale-[1.01] transition-all duration-200 rounded-2xl overflow-hidden flex flex-col sm:flex-row min-h-[170px]"
                 >
                   {/* Card Media Preview */}
                   <div className="w-full sm:w-44 h-36 sm:h-auto bg-slate-50 flex-shrink-0 relative overflow-hidden">
@@ -497,7 +521,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                         {/* Interaction Actions */}
                         <div className="flex items-center gap-3">
                           <button
-                            onClick={() => handleLike(comp.id)}
+                            onClick={(e) => handleLike(comp.id, e)}
                             className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-colors cursor-pointer ${
                               hasUpvoted
                                 ? 'bg-blue-50 border-blue-200 text-blue-650 font-extrabold'
@@ -509,7 +533,10 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                             <span>{comp.supportCount + (likedReports[comp.id] ? 1 : 0)}</span>
                           </button>
                           <button
-                            onClick={() => setActiveCommentReport(comp)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveComplaintId(comp.id);
+                            }}
                             className="flex items-center gap-1.5 px-2 py-1 rounded-lg border bg-white border-slate-150 text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
                             title="Comments"
                           >
@@ -633,82 +660,139 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
         </div>
       </footer>
 
-      {/* Transparent Public Discussion & Comments Drawer Modal */}
-      {activeCommentReport && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-lg space-y-4 shadow-2xl text-slate-800 font-bold flex flex-col max-h-[90vh]">
+      {/* Refactored Centered Split Detail & Comments Modal with Glassmorphic Backdrop */}
+      {activeComplaint && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[9999] animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-4xl h-[85vh] flex flex-col md:flex-row overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
             
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3 flex-shrink-0">
-              <div>
-                <span className="text-[8px] font-extrabold uppercase tracking-wider text-blue-600">Public Transparency Logs</span>
-                <h3 className="text-sm font-extrabold text-slate-850 line-clamp-1">{activeCommentReport.title}</h3>
+            {/* Left Column: Complaint details, large image, and mini location map */}
+            <div className="w-full md:w-1/2 p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-150 overflow-y-auto max-h-[40vh] md:max-h-full space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                    {t(activeComplaint.category)}
+                  </span>
+                  <span className={`text-[8.5px] font-extrabold uppercase px-2 py-0.5 border rounded-lg tracking-wider ${
+                    activeComplaint.status === 'Resolved'
+                      ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                      : ['Critical', 'Emergency'].includes(activeComplaint.priority)
+                      ? 'bg-rose-50 text-rose-600 border-rose-100'
+                      : 'bg-amber-50 text-amber-600 border-amber-100'
+                  }`}>
+                    {t(activeComplaint.status)}
+                  </span>
+                </div>
+
+                <h3 className="text-base font-extrabold text-slate-800 tracking-tight leading-tight">{activeComplaint.title}</h3>
+                
+                {/* Large Media proof preview */}
+                <div className="w-full h-44 bg-slate-100 rounded-2xl overflow-hidden border border-slate-150 shadow-sm relative">
+                  <img 
+                    src={activeComplaint.images && activeComplaint.images.length > 0
+                      ? activeComplaint.images[0].url
+                      : CATEGORY_IMAGES[activeComplaint.category] || CATEGORY_IMAGES.default
+                    } 
+                    alt={activeComplaint.title} 
+                    className="w-full h-full object-cover" 
+                  />
+                </div>
+
+                <div className="space-y-1.5 text-xs text-slate-650 font-bold">
+                  <p className="leading-relaxed font-semibold">{activeComplaint.description}</p>
+                  <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-2 font-mono">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                    <span>{activeComplaint.address} (Ward {activeComplaint.wardId})</span>
+                  </div>
+                </div>
               </div>
-              <button 
-                onClick={() => {
-                  setActiveCommentReport(null);
-                  setNewCommentText('');
-                }} 
-                className="text-slate-400 hover:text-slate-650 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+
+              {/* Coordinates tracking map */}
+              <div className="space-y-1.5">
+                <span className="text-[8px] font-extrabold uppercase tracking-widest text-slate-400">Grievance GPS Pinpoint</span>
+                <ModalMap latitude={activeComplaint.latitude} longitude={activeComplaint.longitude} />
+              </div>
             </div>
 
-            {/* List of Comments scrollbox */}
-            <div className="flex-1 overflow-y-auto pr-1 space-y-3.5 min-h-[200px]">
-              {comments.filter(c => c.reportId === activeCommentReport.id).length === 0 ? (
-                <div className="text-center py-10 text-xs text-slate-400 font-bold">No public updates or comments posted yet. Be the first!</div>
-              ) : (
-                comments
-                  .filter(c => c.reportId === activeCommentReport.id)
-                  .map((comment) => {
-                    const isOfficial = comment.isOfficialUpdate;
-                    return (
-                      <div 
-                        key={comment.id} 
-                        className={`p-3 rounded-2xl border text-xs leading-relaxed space-y-1 ${
-                          isOfficial 
-                            ? 'bg-blue-50/30 border-blue-100/60' 
-                            : 'bg-slate-50/50 border-slate-100'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
-                            {comment.userName}
-                            {isOfficial && (
-                              <span className="bg-blue-600 text-white text-[7.5px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                                {comment.userRole}
-                              </span>
-                            )}
-                          </span>
-                          <span className="text-[8px] text-slate-400 font-mono font-bold">
-                            {formatNepalTime(comment.createdAt)}
-                          </span>
+            {/* Right Column: discussion logs & pinned input form */}
+            <div className="w-full md:w-1/2 flex flex-col justify-between h-[45vh] md:h-full bg-slate-50/30 relative">
+              
+              {/* Comments header */}
+              <div className="p-4 pl-6 border-b border-slate-150 flex items-center justify-between flex-shrink-0 bg-white z-10">
+                <div>
+                  <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Public Discussion Logs</h4>
+                  <p className="text-[9px] text-slate-400 font-bold mt-0.5">Citizens and ward officers updates</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    setActiveComplaintId(null);
+                    setNewCommentText('');
+                  }} 
+                  className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700 bg-white shadow-sm transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Comments scroll area */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4 max-h-[30vh] md:max-h-full">
+                {comments.filter(c => c.reportId === activeComplaint.id).length === 0 ? (
+                  <div className="text-center py-16 text-xs text-slate-400 font-bold">
+                    No logs or feedback notes posted yet.
+                  </div>
+                ) : (
+                  comments
+                    .filter(c => c.reportId === activeComplaint.id)
+                    .map((comment) => {
+                      const isOfficial = comment.isOfficialUpdate;
+                      return (
+                        <div 
+                          key={comment.id} 
+                          className={`p-3.5 rounded-2xl border text-xs leading-relaxed space-y-1.5 ${
+                            isOfficial 
+                              ? 'bg-blue-50/40 border-blue-150 text-slate-700 shadow-sm' 
+                              : 'bg-white border-slate-200 text-slate-600 shadow-inner-sm'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
+                              {comment.userName}
+                              {isOfficial && (
+                                <span className="bg-blue-600 text-white text-[7.5px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                                  {comment.userRole}
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-[8.5px] text-slate-400 font-mono font-bold">
+                              {formatNepalTime(comment.createdAt).split(',')[0]}
+                            </span>
+                          </div>
+                          <p className="text-slate-600 font-semibold mt-1">{comment.content}</p>
                         </div>
-                        <p className="text-slate-600 font-medium mt-1">{comment.content}</p>
-                      </div>
-                    );
-                  })
-              )}
-            </div>
+                      );
+                    })
+                )}
+              </div>
 
-            {/* Post comment form */}
-            <form onSubmit={handleSendComment} className="flex gap-2 border-t border-slate-100 pt-3 flex-shrink-0">
-              <input
-                type="text"
-                value={newCommentText}
-                onChange={e => setNewCommentText(e.target.value)}
-                placeholder="Ask a question or offer helpful municipal info..."
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all font-medium"
-              />
-              <button
-                type="submit"
-                disabled={!newCommentText.trim()}
-                className="bg-blue-650 hover:bg-blue-700 text-white p-2 rounded-xl flex items-center justify-center cursor-pointer transition-colors disabled:opacity-50"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
+              {/* Pinned text input area at the bottom */}
+              <form onSubmit={handleSendComment} className="p-4 border-t border-slate-150 flex gap-2 flex-shrink-0 bg-white sticky bottom-0 z-15">
+                <input
+                  type="text"
+                  value={newCommentText}
+                  onChange={e => setNewCommentText(e.target.value)}
+                  placeholder="Ask a question or offer helpful municipal info..."
+                  className="flex-1 bg-slate-50 border border-slate-250 rounded-xl px-4 py-2 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all font-semibold"
+                />
+                <button
+                  type="submit"
+                  disabled={!newCommentText.trim()}
+                  className="bg-blue-650 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center justify-center cursor-pointer transition-colors disabled:opacity-50 text-xs font-bold"
+                >
+                  <Send className="w-3.5 h-3.5 mr-1" />
+                  <span>Send</span>
+                </button>
+              </form>
+
+            </div>
 
           </div>
         </div>
