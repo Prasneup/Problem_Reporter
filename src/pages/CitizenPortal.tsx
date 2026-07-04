@@ -9,7 +9,7 @@ import {
   MessageCircle, Info, CheckCircle, RefreshCw, EyeOff, Award, Globe, 
   MessageSquare, Shield, ArrowRight
 } from 'lucide-react';
-import ghorahiBanner from '../assets/ghorahi_banner.png';
+import ghorahiBanner from '../assets/ghorahi_banner.jpg';
 
 interface CitizenPortalProps {
   activeView: string;
