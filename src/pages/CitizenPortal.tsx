@@ -192,12 +192,12 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
         {/* City Banner */}
         <div className="lg:col-span-3 h-52 rounded-2xl overflow-hidden relative shadow-sm border border-slate-200/50 bg-blue-900">
           <img src={ghorahiBanner} alt="Ghorahi panorama" className="w-full h-full object-cover opacity-90" />
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/75 via-blue-900/40 to-transparent" />
-          <div className="absolute inset-y-0 left-8 flex flex-col justify-center text-white">
-            <h1 className="text-xl md:text-2xl font-bold font-sans tracking-wide leading-tight">
+          <div className="absolute inset-0 bg-gradient-to-t from-blue-950/85 via-blue-900/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-5 pl-8 flex flex-col text-white z-10">
+            <h1 className="text-lg md:text-xl font-bold font-sans tracking-wide leading-tight">
               {language === 'en' ? 'Clean, Safe & Prosperous Ghorahi' : 'स्वच्छ, सुरक्षित र समृद्ध घोराही'}
             </h1>
-            <p className="text-xs md:text-sm mt-2 font-bold opacity-90">
+            <p className="text-[10px] md:text-xs mt-1.5 font-bold opacity-90">
               {language === 'en' ? 'Office of the Municipal Executive | Ghorahi, Dang' : 'नगर कार्यपालिकाको कार्यालय | घोराही, दाङ'}
             </p>
           </div>
