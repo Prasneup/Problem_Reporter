@@ -73,6 +73,10 @@ export interface Report {
   createdAt: string;
   updatedAt: string;
   images: ReportImage[];
+  upvotes?: number;
+  upvotedByMe?: boolean;
+  mediaUrls?: string[];
+  commentsCount?: number;
 }
 
 export interface Comment {

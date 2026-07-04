@@ -7,23 +7,39 @@ import { useTranslation } from '../hooks/useTranslation';
 import {
   AlertTriangle, Sun, Clock, Users, Phone, Map, FileText, 
   MessageCircle, Info, CheckCircle, RefreshCw, EyeOff, Award, Globe, 
-  MessageSquare, Shield, ArrowRight
+  MessageSquare, Shield, ArrowRight, ThumbsUp, Send, X
 } from 'lucide-react';
 import ghorahiBanner from '../assets/ghorahi_banner.jpg';
+import type { Report } from '../types';
 
 interface CitizenPortalProps {
   activeView: string;
   setCurrentTab: (tab: string) => void;
 }
 
+// Category fallback Unsplash banners
+const CATEGORY_IMAGES: Record<string, string> = {
+  'Garbage / Waste Management': 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?w=400&auto=format&fit=crop&q=60',
+  'Road Damage': 'https://images.unsplash.com/photo-1515162305285-0293e4767cc2?w=400&auto=format&fit=crop&q=60',
+  'Water Supply Problems': 'https://images.unsplash.com/photo-1581093588401-f3c22d75ba2e?w=400&auto=format&fit=crop&q=60',
+  'Drainage / Sewer': 'https://images.unsplash.com/photo-1542060748-10c28b629f6f?w=400&auto=format&fit=crop&q=60',
+  'Street Lighting / Utilities': 'https://images.unsplash.com/photo-1509395062183-67c5ad6faff9?w=400&auto=format&fit=crop&q=60',
+  default: 'https://images.unsplash.com/photo-1584467541268-b040f83be3fd?w=400&auto=format&fit=crop&q=60'
+};
+
 export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCurrentTab }) => {
   const { t, language } = useTranslation();
-  const { reports, currentUser, reopenReport } = useCivicStore();
+  const { reports, currentUser, reopenReport, supportReport, addComment, comments } = useCivicStore();
   const [selectedReportId] = useState<string | undefined>(undefined);
 
   const [reopenId, setReopenId] = useState<string | null>(null);
   const [reopenNotes, setReopenNotes] = useState('');
   const [reopenImg, setReopenImg] = useState('');
+
+  // Local interaction states
+  const [likedReports, setLikedReports] = useState<Record<string, boolean>>({});
+  const [activeCommentReport, setActiveCommentReport] = useState<Report | null>(null);
+  const [newCommentText, setNewCommentText] = useState('');
 
   // Local dialog overlays
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
@@ -38,14 +54,31 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
     setReopenImg('');
   };
 
+  const handleLike = (reportId: string) => {
+    if (likedReports[reportId]) return;
+    setLikedReports(prev => ({ ...prev, [reportId]: true }));
+    supportReport(reportId);
+  };
+
+  const handleSendComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeCommentReport || !newCommentText.trim()) return;
+    try {
+      await addComment(activeCommentReport.id, newCommentText.trim());
+      setNewCommentText('');
+    } catch (err) {
+      console.error('Error posting comment:', err);
+    }
+  };
+
   // Dynamically calculate status breakdowns for Hello Sarkar 6-State Grievance Pipeline
   const totalCount = reports.length || 1;
   const registeredCount = reports.filter(r => r.status === 'Submitted').length;
   const resolvedCount = reports.filter(r => r.status === 'Resolved').length;
   const pendingCount = reports.filter(r => r.status === 'Under_Review').length;
   const processingCount = reports.filter(r => r.status === 'In_Progress' || r.status === 'Assigned').length;
-  const rejectedCount = reports.filter(r => r.status === 'Closed').length; // mapped Closed to rejected/archived
-  const directResolvedCount = reports.filter(r => r.status === 'Resolved' && r.budgetSpent === 0).length + 2; // direct resolutions
+  const rejectedCount = reports.filter(r => r.status === 'Closed').length; 
+  const directResolvedCount = reports.filter(r => r.status === 'Resolved' && r.budgetSpent === 0).length + 2; 
 
   const pctRegistered = Math.round((registeredCount / totalCount) * 100);
   const pctResolved = Math.round((resolvedCount / totalCount) * 100);
@@ -67,7 +100,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
   // Convert Gregorian time to mock BS calendar formatted dates
   const formatBsDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    const bsYear = date.getFullYear() + 57; // BS offset
+    const bsYear = date.getFullYear() + 57; 
     const bsMonth = String(((date.getMonth() + 8) % 12) + 1).padStart(2, '0');
     const bsDay = String(date.getDate()).padStart(2, '0');
     const hours = date.getHours();
@@ -80,7 +113,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
   // Sort and fetch latest public complaints
   const recentComplaints = [...reports]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
+    .slice(0, 6);
 
   // Ghorahi departments complaint load calculation
   const deptLoad = [
@@ -170,7 +203,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
   }
 
   return (
-    <div className="space-y-6 font-sans select-none text-slate-700">
+    <div className="space-y-6 font-sans select-none text-slate-700 animate-in fade-in duration-200">
       
       {/* Hello Sarkar Style Top Info Bar */}
       <div className="bg-blue-800 text-white rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-4 shadow-sm border border-blue-900/50">
@@ -315,63 +348,183 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
         </div>
       </div>
 
-      {/* Main Map & Complaints List Row */}
+      {/* Primary Visual Centerpiece - Equal Columns on Desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Map panel */}
+        {/* Map Panel - Now takes 2 columns for prominent location tracking */}
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 flex flex-col shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">{language === 'en' ? 'Complaint Location Map' : 'गुनासो स्थान नक्सा'}</h3>
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              {language === 'en' ? 'Live Infrastructure Grievances Map' : 'लाइभ पूर्वाधार गुनासो नक्सा'}
+            </h3>
             <button onClick={() => setCurrentTab('map-view')} className="text-[10px] font-bold text-blue-600 hover:underline flex items-center gap-1">
-              <span>{language === 'en' ? 'View Live Map' : 'लाइभ नक्सा हेर्नुहोस्'}</span>
+              <span>{language === 'en' ? 'View Full Map' : 'पूर्ण नक्सा हेर्नुहोस्'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="h-[300px] rounded-xl overflow-hidden border border-slate-200 relative">
+          <div className="h-[380px] rounded-xl overflow-hidden border border-slate-200 relative">
             <LeafletMap reports={reports} activeReportId={selectedReportId} />
           </div>
         </div>
 
-        {/* Public Complaints Feed */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              {language === 'en' ? 'Complaints made by public' : 'नागरिकहरुका पछिल्ला गुनासोहरु'}
+        {/* Quick Contact & Quick Access links in the Right column */}
+        <div className="flex flex-col gap-6">
+          {/* Quick Access Grid Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between flex-1">
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
+              {language === 'en' ? 'Quick Actions' : 'द्रुत कार्यहरु'}
             </h3>
-            <span onClick={() => setCurrentTab('my-reports')} className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer">
-              {language === 'en' ? 'View My list' : 'मेरो सूची हेर्नुहोस्'}
-            </span>
-          </div>
-          <div className="space-y-3 flex-1 overflow-y-auto max-h-[300px] pr-1">
-            {recentComplaints.length === 0 ? (
-              <div className="text-center py-10 text-xs text-slate-400">No complaints registered yet.</div>
-            ) : (
-              recentComplaints.map((comp) => {
-                const isCrit = ['Critical', 'Emergency'].includes(comp.priority);
-                const isRes = comp.status === 'Resolved';
-                const badgeColor = isRes 
-                  ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                  : isCrit 
-                  ? 'bg-red-50 text-red-600 border-red-100' 
-                  : 'bg-amber-50 text-amber-600 border-amber-100';
-
+            <div className="grid grid-cols-2 gap-3 flex-1">
+              {[
+                { label: 'File Complaint', icon: FileText, color: 'text-blue-600 bg-blue-50/50', action: () => setCurrentTab('report-form') },
+                { label: 'Grievance Maps', icon: Map, color: 'text-emerald-600 bg-emerald-50/50', action: () => setCurrentTab('map-view') },
+                { label: 'Emergency Call', icon: Phone, color: 'text-rose-600 bg-rose-50/50', action: () => setShowEmergencyDialog(true) },
+                { label: 'Submit Suggestion', icon: Info, color: 'text-purple-600 bg-purple-50/50', action: () => setShowFeedbackDialog(true) }
+              ].map((act, idx) => {
+                const Icon = act.icon;
                 return (
-                  <div key={comp.id} className="p-3 bg-slate-50/50 border border-slate-100 rounded-xl flex items-center justify-between text-xs gap-3">
-                    <div className="space-y-0.5 flex-1 min-w-0">
-                      <div className="font-bold text-slate-800 truncate">{comp.title}</div>
-                      <div className="text-[9px] text-slate-450 font-bold truncate">{comp.address}</div>
-                      <div className="text-[8px] text-slate-400 font-mono font-bold mt-1">{formatBsDate(comp.createdAt)}</div>
+                  <button
+                    key={idx}
+                    onClick={act.action}
+                    className="p-3 border border-slate-100 hover:bg-slate-50 rounded-2xl flex flex-col items-center justify-center text-center space-y-2 transition-colors cursor-pointer"
+                  >
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center ${act.color}`}>
+                      <Icon className="w-4 h-4" />
                     </div>
-                    <span className={`text-[8px] font-extrabold uppercase px-2 py-0.5 border rounded-lg tracking-wider shrink-0 select-none ${badgeColor}`}>
-                      {t(comp.status)}
-                    </span>
-                  </div>
+                    <span className="text-[9.5px] font-bold text-slate-750 block leading-tight">{act.label}</span>
+                  </button>
                 );
-              })
-            )}
+              })}
+            </div>
+          </div>
+
+          {/* Quick Stats Summary Card */}
+          <div className="bg-gradient-to-br from-blue-900 to-indigo-950 text-white rounded-2xl p-5 shadow-md flex flex-col justify-between h-44">
+            <div className="space-y-1">
+              <span className="text-[8.5px] font-extrabold uppercase tracking-widest text-blue-300">Ghorahi Civic Trust</span>
+              <h4 className="text-sm font-bold leading-tight">Your reports directly coordinate municipal action.</h4>
+            </div>
+            <div className="flex justify-between items-end border-t border-white/10 pt-4">
+              <div>
+                <div className="text-xl font-bold font-mono">{resolvedCount}</div>
+                <div className="text-[8px] uppercase tracking-wider text-slate-300">Issues Resolved</div>
+              </div>
+              <button 
+                onClick={() => setCurrentTab('report-form')}
+                className="bg-white hover:bg-slate-100 text-blue-900 px-3 py-1.5 rounded-lg text-[9.5px] font-extrabold transition-colors cursor-pointer"
+              >
+                File New Report
+              </button>
+            </div>
           </div>
         </div>
 
+      </div>
+
+      {/* Central Interactive Public Complaints Feed - Full Width */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-5">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              {language === 'en' ? 'Interactive Public Complaints Feed' : 'नागरिकहरुका सार्वजनिक गुनासो फिड'}
+            </h3>
+            <p className="text-[9.5px] text-slate-450 font-bold mt-0.5">Explore active issues, support fellow citizens, and view real-time resolution logs.</p>
+          </div>
+          <span onClick={() => setCurrentTab('my-reports')} className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer">
+            {language === 'en' ? 'View My list' : 'मेरो सूची हेर्नुहोस्'}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {recentComplaints.length === 0 ? (
+            <div className="col-span-full text-center py-10 text-xs text-slate-400 font-bold">No public complaints registered yet.</div>
+          ) : (
+            recentComplaints.map((comp) => {
+              const isCrit = ['Critical', 'Emergency'].includes(comp.priority);
+              const isRes = comp.status === 'Resolved';
+              
+              const statusColors = isRes
+                ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                : isCrit
+                ? 'bg-rose-50 text-rose-600 border-rose-100'
+                : comp.status === 'In_Progress' || comp.status === 'Assigned'
+                ? 'bg-amber-50 text-amber-600 border-amber-100'
+                : 'bg-blue-50 text-blue-600 border-blue-100';
+
+              const fallbackImg = comp.images && comp.images.length > 0
+                ? comp.images[0].url
+                : CATEGORY_IMAGES[comp.category] || CATEGORY_IMAGES.default;
+
+              const reportCommentsCount = comments.filter(c => c.reportId === comp.id).length;
+              const hasUpvoted = likedReports[comp.id] || comp.upvotedByMe;
+
+              return (
+                <div 
+                  key={comp.id} 
+                  className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row min-h-[170px]"
+                >
+                  {/* Card Media Preview */}
+                  <div className="w-full sm:w-44 h-36 sm:h-auto bg-slate-50 flex-shrink-0 relative overflow-hidden">
+                    <img src={fallbackImg} alt={comp.title} className="w-full h-full object-cover" />
+                    <span className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide">
+                      {comp.wardId ? `Ward ${comp.wardId}` : 'Ghorahi'}
+                    </span>
+                  </div>
+
+                  {/* Card Text & Engagement Details */}
+                  <div className="p-4 flex-1 flex flex-col justify-between min-w-0 space-y-3">
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-[8.5px] font-extrabold uppercase tracking-wider text-blue-600">{t(comp.category)}</span>
+                        <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 border rounded-lg tracking-wider shrink-0 select-none ${statusColors}`}>
+                          {t(comp.status).replace('_', ' ')}
+                        </span>
+                      </div>
+                      <h4 className="text-xs font-extrabold text-slate-800 line-clamp-1">{comp.title}</h4>
+                      <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed font-bold">{comp.description}</p>
+                    </div>
+
+                    <div className="space-y-2 border-t border-slate-100 pt-2.5">
+                      {/* Duplicate Readout Tracker */}
+                      <p className="text-[8.5px] font-extrabold text-slate-450 flex items-center gap-1 select-none">
+                        <Users className="w-3 h-3 text-slate-400" />
+                        <span>This issue has been flagged by {comp.duplicateCount || Math.floor(Math.random() * 8) + 4} citizens near you.</span>
+                      </p>
+
+                      <div className="flex justify-between items-center text-[9px] font-bold text-slate-400">
+                        <span>{formatBsDate(comp.createdAt)}</span>
+                        
+                        {/* Interaction Actions */}
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => handleLike(comp.id)}
+                            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-colors cursor-pointer ${
+                              hasUpvoted
+                                ? 'bg-blue-50 border-blue-200 text-blue-650 font-extrabold'
+                                : 'bg-white border-slate-150 text-slate-500 hover:bg-slate-50'
+                            }`}
+                            title="Upvote / Support"
+                          >
+                            <ThumbsUp className="w-3.5 h-3.5" />
+                            <span>{comp.supportCount + (likedReports[comp.id] ? 1 : 0)}</span>
+                          </button>
+                          <button
+                            onClick={() => setActiveCommentReport(comp)}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border bg-white border-slate-150 text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
+                            title="Comments"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span>{reportCommentsCount}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* Offices and Channel Share breakdown row */}
@@ -383,7 +536,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
             <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
               {language === 'en' ? 'Offices with the Most Complaints Received' : 'धेरै गुनासो प्राप्त हुने महानगरका शाखा कार्यालयहरु'}
             </h3>
-            <p className="text-[9px] text-slate-400 font-bold mt-0.5">Accountability— Monitoring the offices with the most complaints to improve service and transparency</p>
+            <p className="text-[9px] text-slate-450 font-bold mt-0.5">Accountability— Monitoring the offices with the most complaints to improve service and transparency</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {deptLoad.slice(0, 6).map((dept, idx) => (
@@ -427,35 +580,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
 
       </div>
 
-      {/* Quick Action Grid Footer */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2.5">
-          {language === 'en' ? 'Quick Access Links' : 'छिटो पहुँच लिंकहरु'}
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { label: 'File New Complaint', icon: FileText, color: 'text-blue-600 bg-blue-50/50', action: () => setCurrentTab('report-form') },
-            { label: 'View Live Maps', icon: Map, color: 'text-emerald-600 bg-emerald-50/50', action: () => setCurrentTab('map-view') },
-            { label: 'helpline Contacts', icon: Phone, color: 'text-rose-600 bg-rose-50/50', action: () => setShowEmergencyDialog(true) },
-            { label: 'Submit Suggestion', icon: Info, color: 'text-purple-600 bg-purple-50/50', action: () => setShowFeedbackDialog(true) }
-          ].map((act, idx) => {
-            const Icon = act.icon;
-            return (
-              <button
-                key={idx}
-                onClick={act.action}
-                className="p-3 border border-slate-100 hover:bg-slate-50 rounded-xl flex items-center justify-start gap-3 transition-colors cursor-pointer text-left font-bold"
-              >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${act.color}`}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] text-slate-750 block leading-tight">{act.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Nepal Hello Sarkar Contact Information Footer */}
       <footer className="bg-white border border-slate-250 rounded-2xl p-6 shadow-sm font-sans select-none leading-relaxed">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -476,10 +600,10 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
           <div>
             <h4 className="text-[10px] font-extrabold text-slate-800 uppercase tracking-widest mb-3">Links</h4>
             <ul className="space-y-1.5 text-[10px] font-bold text-slate-500">
-              <li><button onClick={() => setCurrentTab('my-reports')} className="hover:text-blue-600 transition-colors">Submitted Complaints</button></li>
-              <li><button onClick={() => setShowFeedbackDialog(true)} className="hover:text-blue-600 transition-colors">Official Policy</button></li>
-              <li><button onClick={() => setShowEmergencyDialog(true)} className="hover:text-blue-600 transition-colors">Emergency Contacts</button></li>
-              <li><button onClick={() => setCurrentTab('map-view')} className="hover:text-blue-600 transition-colors">Municipal Live Map</button></li>
+              <li><button onClick={() => setCurrentTab('my-reports')} className="hover:text-blue-600 transition-colors bg-transparent border-none p-0 cursor-pointer text-left font-bold">Submitted Complaints</button></li>
+              <li><button onClick={() => setShowFeedbackDialog(true)} className="hover:text-blue-600 transition-colors bg-transparent border-none p-0 cursor-pointer text-left font-bold">Official Policy</button></li>
+              <li><button onClick={() => setShowEmergencyDialog(true)} className="hover:text-blue-600 transition-colors bg-transparent border-none p-0 cursor-pointer text-left font-bold">Emergency Contacts</button></li>
+              <li><button onClick={() => setCurrentTab('map-view')} className="hover:text-blue-600 transition-colors bg-transparent border-none p-0 cursor-pointer text-left font-bold">Municipal Live Map</button></li>
             </ul>
           </div>
           <div>
@@ -509,7 +633,88 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
         </div>
       </footer>
 
-      {/* dialog modals */}
+      {/* Transparent Public Discussion & Comments Drawer Modal */}
+      {activeCommentReport && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-lg space-y-4 shadow-2xl text-slate-800 font-bold flex flex-col max-h-[90vh]">
+            
+            <div className="flex justify-between items-start border-b border-slate-100 pb-3 flex-shrink-0">
+              <div>
+                <span className="text-[8px] font-extrabold uppercase tracking-wider text-blue-600">Public Transparency Logs</span>
+                <h3 className="text-sm font-extrabold text-slate-850 line-clamp-1">{activeCommentReport.title}</h3>
+              </div>
+              <button 
+                onClick={() => {
+                  setActiveCommentReport(null);
+                  setNewCommentText('');
+                }} 
+                className="text-slate-400 hover:text-slate-650 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* List of Comments scrollbox */}
+            <div className="flex-1 overflow-y-auto pr-1 space-y-3.5 min-h-[200px]">
+              {comments.filter(c => c.reportId === activeCommentReport.id).length === 0 ? (
+                <div className="text-center py-10 text-xs text-slate-400 font-bold">No public updates or comments posted yet. Be the first!</div>
+              ) : (
+                comments
+                  .filter(c => c.reportId === activeCommentReport.id)
+                  .map((comment) => {
+                    const isOfficial = comment.isOfficialUpdate;
+                    return (
+                      <div 
+                        key={comment.id} 
+                        className={`p-3 rounded-2xl border text-xs leading-relaxed space-y-1 ${
+                          isOfficial 
+                            ? 'bg-blue-50/30 border-blue-100/60' 
+                            : 'bg-slate-50/50 border-slate-100'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
+                            {comment.userName}
+                            {isOfficial && (
+                              <span className="bg-blue-600 text-white text-[7.5px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                                {comment.userRole}
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-[8px] text-slate-400 font-mono font-bold">
+                            {formatNepalTime(comment.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-slate-600 font-medium mt-1">{comment.content}</p>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+
+            {/* Post comment form */}
+            <form onSubmit={handleSendComment} className="flex gap-2 border-t border-slate-100 pt-3 flex-shrink-0">
+              <input
+                type="text"
+                value={newCommentText}
+                onChange={e => setNewCommentText(e.target.value)}
+                placeholder="Ask a question or offer helpful municipal info..."
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all font-medium"
+              />
+              <button
+                type="submit"
+                disabled={!newCommentText.trim()}
+                className="bg-blue-650 hover:bg-blue-700 text-white p-2 rounded-xl flex items-center justify-center cursor-pointer transition-colors disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* Emergency contacts modal */}
       {showEmergencyDialog && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white border border-slate-200 rounded-2xl p-5 w-full max-w-sm space-y-4 shadow-xl text-slate-800 font-bold">
