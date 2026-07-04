@@ -40,31 +40,36 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
 
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // 1. Define Layer Views (Light Premium, Satellite, and Standard Streets)
-    const lightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd',
-      maxZoom: 20
+    // 1. Define Official Google Maps layers inside Leaflet for premium UX and accuracy
+    const googleStreets = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      attribution: '&copy; Google Maps',
+      maxZoom: 22
     });
 
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, USDA, USGS, and the GIS User Community',
-      maxZoom: 19
+    const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+      attribution: '&copy; Google Maps',
+      maxZoom: 22
     });
 
-    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19
+    const googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      attribution: '&copy; Google Maps',
+      maxZoom: 22
     });
 
-    // Add Light layer as default view
-    lightLayer.addTo(map);
+    const googleTerrain = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+      attribution: '&copy; Google Maps',
+      maxZoom: 22
+    });
+
+    // Add Google Streets layer as the default view
+    googleStreets.addTo(map);
 
     // 2. Add Native Leaflet Layer Switcher Control in top-right
     const baseLayers = {
-      "Light Premium": lightLayer,
-      "Satellite View": satelliteLayer,
-      "Standard Streets": streetLayer
+      "Google Streets": googleStreets,
+      "Google Satellite": googleSatellite,
+      "Google Hybrid": googleHybrid,
+      "Google Terrain": googleTerrain
     };
     L.control.layers(baseLayers, undefined, { position: 'topright', collapsed: false }).addTo(map);
 
@@ -101,7 +106,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         icon: L.divIcon({
           html: `<div class="relative flex items-center justify-center">
             <span class="animate-ping absolute inline-flex h-6 w-6 rounded-full bg-blue-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-600 border-2 border-white shadow"></span>
+            <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-650 border-2 border-white shadow"></span>
           </div>`,
           className: '',
           iconSize: [24, 24],
@@ -187,7 +192,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   return (
     <div className="relative w-full h-full rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
       <div ref={mapRef} className="w-full h-full min-h-[350px]" />
-      <div className="absolute bottom-3 left-3 z-[400] bg-white/90 border border-slate-200 rounded-xl px-3 py-1.5 text-[9px] font-bold text-slate-650 backdrop-blur-sm shadow-sm select-none">
+      <div className="absolute bottom-3 left-3 z-[400] bg-white/90 border border-slate-200/60 rounded-xl px-3 py-1.5 text-[9px] font-bold text-slate-700 backdrop-blur-sm shadow-sm select-none">
         Click map to select custom GPS location
       </div>
     </div>
