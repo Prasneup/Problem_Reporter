@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCivicStore } from '../../stores/civicStore';
-import { LeafletMap } from '../maps/LeafletMap';
+import { LocationPickerMap } from '../maps/LocationPickerMap';
 import { detectMunicipalityAndWard } from '../../utils/civicUtils';
 import { aiVerificationService } from '../../services/aiVerificationService';
 import { DuplicateChecker } from '../../features/ai/DuplicateChecker';
@@ -48,6 +48,11 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   // Duplicate Check triggers
   const [showDuplicateOverlay, setShowDuplicateOverlay] = useState(false);
 
+  // Automatically request geolocation on mount
+  useEffect(() => {
+    handleAutofillGps();
+  }, []);
+
   const handleMapClick = (lat: number, lng: number, accuracy: number = 2.0) => {
     setCoords({ lat, lng });
     setGpsAccuracy(accuracy);
@@ -61,6 +66,12 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   };
 
   const handleAutofillGps = () => {
+    if (!navigator.geolocation) {
+      setGpsError("Geolocation is not supported by your browser — please tap on the map to set your location manually.");
+      setLoadingGps(false);
+      return;
+    }
+
     setLoadingGps(true);
     setGpsError(null);
     setGpsSampleCount(0);
@@ -89,30 +100,15 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
           }
         },
         (error) => {
-          console.warn('GPS single sample request failed, collecting synthetic drift:', error);
-          const baseLat = 28.062;
-          const baseLng = 82.484;
-          const driftLat = (Math.random() - 0.5) * 0.0003;
-          const driftLng = (Math.random() - 0.5) * 0.0003;
-          samples.push({
-            lat: baseLat + driftLat,
-            lng: baseLng + driftLng,
-            accuracy: 4.8 + Math.random() * 3
-          });
-          count++;
-          setGpsSampleCount(count);
-
-          if (count < maxSamples) {
-            setTimeout(captureSample, 200);
+          console.warn('GPS single sample request failed:', error);
+          setLoadingGps(false);
+          if (error.code === 1) { // PERMISSION_DENIED
+            setGpsError("Location access denied — please enable location services or tap on the map to set your location manually.");
           } else {
-            const result = aiVerificationService.processGpsSamples(samples);
-            setGpsAccuracy(result.accuracyRadius);
-            setIsLowAccuracyWarning(result.accuracyRadius > 50);
-            handleMapClick(result.lat, result.lng, result.accuracyRadius);
-            setLoadingGps(false);
+            setGpsError("Location detection failed — please tap on the map to set your location manually.");
           }
         },
-        { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     };
 
@@ -328,11 +324,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
               </div>
             )}
 
-            {gpsError && (
-              <div className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200/60 px-3.5 py-2.5 rounded-xl leading-relaxed">
-                ⚠️ {gpsError}
-              </div>
-            )}
+            {/* GPS warning message is now rendered under the map on the right */}
 
             {isLowAccuracyWarning && (
               <div className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200/80 px-3.5 py-2.5 rounded-xl leading-relaxed flex items-start gap-2 font-bold">
@@ -373,13 +365,28 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
         </div>
 
         <div className="space-y-3">
-          <div className="h-[250px] rounded-2xl overflow-hidden border border-slate-200">
-            <LeafletMap 
-              reports={reports} 
-              onSelectCoords={(lat, lng) => handleMapClick(lat, lng, 2.0)} 
-              selectedCoords={coords || undefined} 
+          <div className="h-[250px] rounded-2xl overflow-hidden border border-slate-200 relative">
+            <LocationPickerMap 
+              selectedCoords={coords} 
+              onSelectCoords={(lat, lng, accuracy) => handleMapClick(lat, lng, accuracy)} 
+              gpsAccuracy={gpsAccuracy}
             />
+            {loadingGps && (
+              <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-[500] flex flex-col items-center justify-center gap-2">
+                <Loader className="w-8 h-8 text-blue-600 animate-spin" />
+                <span className="text-xs font-bold text-slate-700">Detecting your location...</span>
+                <span className="text-[10px] text-slate-500 font-semibold">Sample {gpsSampleCount}/8</span>
+              </div>
+            )}
           </div>
+          {gpsError && (
+            <div className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200/60 px-3.5 py-2.5 rounded-xl leading-relaxed flex items-start gap-2">
+              <Info className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <span className="font-extrabold text-amber-800">Location Action Required:</span> {gpsError}
+              </div>
+            </div>
+          )}
           {coords && (
             <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-xs space-y-1.5 font-mono text-slate-650 font-bold">
               <div className="flex justify-between border-b border-slate-100 pb-1 mb-1">

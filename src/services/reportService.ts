@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { Report, Comment, WardBudget, ReportImage, ReportCategory, PriorityLevel, ReportStatus, UserRole } from '../types';
+import type { Report, Comment, WardBudget, ReportImage, ReportCategory, PriorityLevel, ReportStatus, UserRole, Notification } from '../types';
 import { authService } from './authService';
 
 interface DbReportImageRow {
@@ -200,6 +200,70 @@ export const reportService = {
       .from('reports')
       .update({ support_count: nextSupportCount, priority: nextPriority })
       .eq('id', reportId);
+  },
+
+  async toggleSupportReport(reportId: string, userId: string, hasLiked: boolean, nextSupportCount: number, nextPriority: string): Promise<void> {
+    if (hasLiked) {
+      await supabase.from('support_votes').insert({ report_id: reportId, user_id: userId });
+    } else {
+      await supabase.from('support_votes').delete().eq('report_id', reportId).eq('user_id', userId);
+    }
+
+    await supabase
+      .from('reports')
+      .update({ support_count: nextSupportCount, priority: nextPriority })
+      .eq('id', reportId);
+  },
+
+  async fetchUserLikes(userId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('support_votes')
+      .select('report_id')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching user likes:', error);
+      return [];
+    }
+    return (data || []).map((row: any) => row.report_id);
+  },
+
+  async fetchNotifications(userId: string): Promise<Notification[]> {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching notifications:', error);
+      return [];
+    }
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      userId: row.user_id,
+      title: row.title,
+      message: row.message,
+      type: row.type,
+      isRead: row.is_read,
+      createdAt: row.created_at
+    }));
+  },
+
+  async createDbNotification(notification: { userId: string; title: string; message: string; type: string }): Promise<void> {
+    await supabase.from('notifications').insert({
+      user_id: notification.userId,
+      title: notification.title,
+      message: notification.message,
+      type: notification.type
+    });
+  },
+
+  async dismissDbNotification(id: string): Promise<void> {
+    await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('id', id);
   },
 
   async addComment(reportId: string, userId: string, content: string): Promise<Comment> {

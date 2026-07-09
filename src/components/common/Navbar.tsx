@@ -9,7 +9,8 @@ export const Navbar: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  const activeNotifications = notifications.filter(n => !n.isRead);
+  const userNotifications = notifications.filter(n => n.userId === currentUser.id);
+  const activeNotifications = userNotifications.filter(n => !n.isRead);
 
   const toggleLanguage = () => {
     setLanguage(language === 'en' ? 'ne' : 'en');
@@ -88,10 +89,10 @@ export const Navbar: React.FC = () => {
                 <span className="text-[9px] text-slate-400 font-semibold">{activeNotifications.length} unread</span>
               </div>
               <div className="space-y-2">
-                {notifications.length === 0 ? (
+                {userNotifications.length === 0 ? (
                   <p className="text-[10px] text-slate-400 text-center py-4">No notifications yet.</p>
                 ) : (
-                  notifications.map((n) => (
+                  userNotifications.map((n) => (
                     <div
                       key={n.id}
                       className={`p-2.5 rounded-lg border text-[10px] transition-colors leading-relaxed ${n.isRead

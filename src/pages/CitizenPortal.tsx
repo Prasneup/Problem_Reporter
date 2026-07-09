@@ -47,15 +47,12 @@ const ModalMap: React.FC<{ latitude: number; longitude: number }> = ({ latitude,
 
 export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCurrentTab }) => {
   const { t, language } = useTranslation();
-  const { reports, currentUser, reopenReport, supportReport, addComment, comments } = useCivicStore();
+  const { reports, currentUser, reopenReport, supportReport, addComment, comments, userLikes } = useCivicStore();
   const [selectedReportId] = useState<string | undefined>(undefined);
 
   const [reopenId, setReopenId] = useState<string | null>(null);
   const [reopenNotes, setReopenNotes] = useState('');
   const [reopenImg, setReopenImg] = useState('');
-
-  // Local interaction states
-  const [likedReports, setLikedReports] = useState<Record<string, boolean>>({});
   
   // Refactored State Pattern: Explicit Selected Complaint Id tracking
   const [activeComplaintId, setActiveComplaintId] = useState<string | null>(null);
@@ -76,8 +73,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
 
   const handleLike = (reportId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // prevent opening details modal
-    if (likedReports[reportId]) return;
-    setLikedReports(prev => ({ ...prev, [reportId]: true }));
     supportReport(reportId);
   };
 
@@ -479,7 +474,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                 : CATEGORY_IMAGES[comp.category] || CATEGORY_IMAGES.default;
 
               const reportCommentsCount = comments.filter(c => c.reportId === comp.id).length;
-              const hasUpvoted = likedReports[comp.id] || comp.upvotedByMe;
+              const hasUpvoted = userLikes ? userLikes.includes(comp.id) : false;
 
               return (
                 <div 
@@ -512,7 +507,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                       {/* Duplicate Readout Tracker */}
                       <p className="text-[8.5px] font-extrabold text-slate-450 flex items-center gap-1 select-none">
                         <Users className="w-3 h-3 text-slate-400" />
-                        <span>This issue has been flagged by {comp.duplicateCount || Math.floor(Math.random() * 8) + 4} citizens near you.</span>
+                        <span>This issue has been flagged by {comp.duplicateCount || 0} citizens near you.</span>
                       </p>
 
                       <div className="flex justify-between items-center text-[9px] font-bold text-slate-400">
@@ -530,7 +525,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                             title="Upvote / Support"
                           >
                             <ThumbsUp className="w-3.5 h-3.5" />
-                            <span>{comp.supportCount + (likedReports[comp.id] ? 1 : 0)}</span>
+                            <span>{comp.supportCount}</span>
                           </button>
                           <button
                             onClick={(e) => {

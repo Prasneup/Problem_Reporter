@@ -14,6 +14,7 @@ interface CivicState {
   notifications: Notification[];
   offlineQueue: Report[];
   isOnline: boolean;
+  userLikes: string[];
 
   // Actions
   setLanguage: (lang: 'en' | 'ne') => void;
@@ -58,6 +59,7 @@ export const useCivicStore = create<CivicState>()(
       ],
       offlineQueue: [],
       isOnline: true,
+      userLikes: [],
 
       setLanguage: (language) => set({ language }),
 
@@ -68,10 +70,14 @@ export const useCivicStore = create<CivicState>()(
         );
         if (profileKey) {
           set({ currentUser: MOCK_PROFILES[profileKey] });
+          get().loadInitialData();
         }
       },
 
-      setCurrentUser: (currentUser) => set({ currentUser }),
+      setCurrentUser: (currentUser) => {
+        set({ currentUser });
+        get().loadInitialData();
+      },
 
       signOut: async () => {
         try {
@@ -98,6 +104,18 @@ export const useCivicStore = create<CivicState>()(
           }
           if (comments && comments.length > 0) {
             set({ comments });
+          }
+
+          // Fetch user-specific likes and notifications
+          const userId = get().currentUser?.id;
+          if (userId) {
+            const userLikes = await reportService.fetchUserLikes(userId);
+            set({ userLikes });
+
+            const dbNotifs = await reportService.fetchNotifications(userId);
+            if (dbNotifs && dbNotifs.length > 0) {
+              set({ notifications: dbNotifs });
+            }
           }
         } catch (err) {
           console.error('Error loading initial data from Supabase:', err);
@@ -229,20 +247,25 @@ export const useCivicStore = create<CivicState>()(
         const target = get().reports.find(r => r.id === reportId);
         if (!target) return;
 
-        const nextSupports = target.supportCount + 1;
+        const userLikes = get().userLikes || [];
+        const hasLiked = userLikes.includes(reportId);
+
+        let nextSupports = target.supportCount;
+        let nextUserLikes = [...userLikes];
+
+        if (hasLiked) {
+          nextSupports = Math.max(0, nextSupports - 1);
+          nextUserLikes = nextUserLikes.filter(id => id !== reportId);
+        } else {
+          nextSupports = nextSupports + 1;
+          nextUserLikes.push(reportId);
+        }
+
         const nextPriority = (nextSupports > 25 && target.priority !== 'Emergency')
           ? 'Critical'
           : calculatePriority(target.category, nextSupports, target.isEmergency);
 
-        if (get().isOnline) {
-          try {
-            const { default: reportService } = await import('../services/reportService');
-            await reportService.supportReport(reportId, user.id, nextSupports, nextPriority);
-          } catch (err) {
-            console.error('Error voting support in DB:', err);
-          }
-        }
-
+        // Optimistic UI updates
         set((state) => {
           const reports = state.reports.map((r) => {
             if (r.id === reportId) {
@@ -261,31 +284,113 @@ export const useCivicStore = create<CivicState>()(
             return r;
           });
 
+          const pointsAwarded = hasLiked ? -2 : 2;
           const updatedUser = {
             ...state.currentUser,
-            reputationPoints: state.currentUser.reputationPoints + 2
+            reputationPoints: Math.max(0, state.currentUser.reputationPoints + pointsAwarded)
           };
 
-          return { reports, currentUser: updatedUser };
+          return { 
+            reports, 
+            currentUser: updatedUser,
+            userLikes: nextUserLikes
+          };
         });
+
+        if (get().isOnline) {
+          try {
+            const { default: reportService } = await import('../services/reportService');
+            await reportService.toggleSupportReport(reportId, user.id, !hasLiked, nextSupports, nextPriority);
+
+            // Generate notification if it was a LIKE (not UNLIKE) and not own report
+            if (!hasLiked && target.reporterId !== user.id) {
+              const now = new Date().toISOString();
+              const notificationTitle = 'New Support Received';
+              const notificationMessage = `${user.name} upvoted your report on "${target.title}"`;
+
+              const alreadyExists = get().notifications.some(
+                n => n.userId === target.reporterId && n.title === notificationTitle && n.message === notificationMessage
+              );
+
+              if (!alreadyExists) {
+                const newNotif = {
+                  id: 'n-like-' + Math.random().toString(36).substring(2, 11),
+                  userId: target.reporterId,
+                  title: notificationTitle,
+                  message: notificationMessage,
+                  type: 'info' as const,
+                  isRead: false,
+                  createdAt: now
+                };
+
+                set((state) => ({
+                  notifications: [newNotif, ...state.notifications]
+                }));
+
+                await reportService.createDbNotification({
+                  userId: target.reporterId,
+                  title: notificationTitle,
+                  message: notificationMessage,
+                  type: 'info'
+                });
+              }
+            }
+          } catch (err) {
+            console.error('Error toggling support in DB:', err);
+          }
+        }
       },
 
       addComment: async (reportId, content) => {
         const user = get().currentUser;
+        const target = get().reports.find(r => r.id === reportId);
+        if (!target) return;
+
+        let commentObj: Comment;
+
         if (get().isOnline) {
           try {
             const { default: reportService } = await import('../services/reportService');
-            const commentObj = await reportService.addComment(reportId, user.id, content);
+            commentObj = await reportService.addComment(reportId, user.id, content);
             set((state) => ({
               comments: [...state.comments, commentObj]
             }));
+
+            // Generate notification for the original poster if commenter is a different user
+            if (target.reporterId !== user.id) {
+              const now = new Date().toISOString();
+              const notificationTitle = 'New Comment Posted';
+              const commentPreview = content.length > 50 ? `${content.substring(0, 50)}...` : content;
+              const notificationMessage = `${user.name} commented on your report "${target.title}": "${commentPreview}"`;
+
+              const newNotif = {
+                id: 'n-comment-' + Math.random().toString(36).substring(2, 11),
+                userId: target.reporterId,
+                title: notificationTitle,
+                message: notificationMessage,
+                type: 'info' as const,
+                isRead: false,
+                createdAt: now
+              };
+
+              set((state) => ({
+                notifications: [newNotif, ...state.notifications]
+              }));
+
+              await reportService.createDbNotification({
+                userId: target.reporterId,
+                title: notificationTitle,
+                message: notificationMessage,
+                type: 'info'
+              });
+            }
             return;
           } catch (err) {
             console.error('Error saving comment in DB:', err);
           }
         }
 
-        const commentObj: Comment = {
+        commentObj = {
           id: 'c-' + Math.random().toString(36).substring(2, 11),
           reportId,
           userId: user.id,
@@ -296,9 +401,25 @@ export const useCivicStore = create<CivicState>()(
           createdAt: new Date().toISOString()
         };
 
-        set((state) => ({
-          comments: [...state.comments, commentObj]
-        }));
+        set((state) => {
+          const nextNotifications = [...state.notifications];
+          if (target.reporterId !== user.id) {
+            nextNotifications.unshift({
+              id: 'n-comment-' + Math.random().toString(36).substring(2, 11),
+              userId: target.reporterId,
+              title: 'New Comment Posted',
+              message: `${user.name} commented on your report "${target.title}": "${content.substring(0, 50)}"`,
+              type: 'info' as const,
+              isRead: false,
+              createdAt: new Date().toISOString()
+            });
+          }
+
+          return {
+            comments: [...state.comments, commentObj],
+            notifications: nextNotifications
+          };
+        });
       },
 
       updateReportStatus: async (reportId, status, notes) => {
@@ -553,10 +674,19 @@ export const useCivicStore = create<CivicState>()(
         });
       },
 
-      dismissNotification: (id) => {
+      dismissNotification: async (id) => {
         set((state) => ({
           notifications: state.notifications.map(n => n.id === id ? { ...n, isRead: true } : n)
         }));
+
+        if (get().isOnline) {
+          try {
+            const { default: reportService } = await import('../services/reportService');
+            await reportService.dismissDbNotification(id);
+          } catch (err) {
+            console.error('Error dismissing notification in DB:', err);
+          }
+        }
       }
     }),
     {
@@ -567,7 +697,8 @@ export const useCivicStore = create<CivicState>()(
         assignments: state.assignments,
         budgets: state.budgets,
         notifications: state.notifications,
-        language: state.language
+        language: state.language,
+        userLikes: state.userLikes
       })
     }
   )
