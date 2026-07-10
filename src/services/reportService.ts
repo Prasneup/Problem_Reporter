@@ -228,6 +228,15 @@ export const reportService = {
             aiAnalysis: insertedImage.ai_analysis,
             createdAt: insertedImage.created_at
           });
+        } else {
+          // Fallback to local preview image if database insert fails (e.g. RLS policy blocked it)
+          images.push({
+            id: 'local-' + Math.random().toString(36).substring(2, 9),
+            reportId: insertedReport.id,
+            url: url,
+            imageType: 'before',
+            createdAt: new Date().toISOString()
+          });
         }
       }
     }
@@ -249,6 +258,14 @@ export const reportService = {
           reportId: insertedVideo.report_id,
           url: insertedVideo.url,
           createdAt: insertedVideo.created_at
+        });
+      } else {
+        // Fallback to local video preview if insert fails
+        videos.push({
+          id: 'local-v-' + Math.random().toString(36).substring(2, 9),
+          reportId: insertedReport.id,
+          url: report.videoUrl,
+          createdAt: new Date().toISOString()
         });
       }
     }
