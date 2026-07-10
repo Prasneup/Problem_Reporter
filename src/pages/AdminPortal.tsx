@@ -74,12 +74,17 @@ export const AdminPortal: React.FC = () => {
     e.preventDefault();
     if (!selectedReportId) return;
 
-    await assignDepartment(selectedReportId, routeDept, routeRemarks, routePriority, 'Assigned');
-    setRouteSuccess(true);
-    setTimeout(() => {
-      setRouteSuccess(false);
-      setSelectedReportId(null);
-    }, 2000);
+    try {
+      await assignDepartment(selectedReportId, routeDept, routeRemarks, routePriority, 'Assigned');
+      setRouteSuccess(true);
+      setTimeout(() => {
+        setRouteSuccess(false);
+        setSelectedReportId(null);
+      }, 2000);
+    } catch (err: any) {
+      console.error('Failed to forward report:', err);
+      alert('Error forwarding report: ' + (err.message || err));
+    }
   };
 
   const getStatusBadge = (status: ReportStatus) => {
