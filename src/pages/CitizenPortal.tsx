@@ -3,6 +3,7 @@ import L from 'leaflet';
 import { useCivicStore } from '../stores/civicStore';
 import { LeafletMap } from '../components/maps/LeafletMap';
 import { ReportForm } from '../components/forms/ReportForm';
+import { reportService } from '../services/reportService';
 import { formatNepalTime } from '../utils/civicUtils';
 import { useTranslation } from '../hooks/useTranslation';
 import {
@@ -1377,8 +1378,18 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
       setFaqOpen(prev => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handleFormSubmit = (e: React.FormEvent) => {
+    const handleFormSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
+      try {
+        await reportService.createDbNotification({
+          userId: 'p-admin', // Targets the municipality Admin
+          title: 'New Support Desk Inquiry',
+          message: `From ${currentUser.name} (${subEmail}): "${subTitle}" - Message: ${subMsg}`,
+          type: 'info'
+        });
+      } catch (err) {
+        console.error('Failed to notify Admin of support desk inquiry:', err);
+      }
       setSuccess('Your support inquiry has been submitted! Our officers will respond shortly.');
       setSubTitle('');
       setSubMsg('');
