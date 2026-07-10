@@ -508,8 +508,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
 
   // Sort and fetch latest public complaints
   const recentComplaints = [...reports]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 6);
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   // Ghorahi departments complaint load calculation
   const deptLoad = [
@@ -1001,95 +1000,97 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {recentComplaints.length === 0 ? (
-            <div className="col-span-full text-center py-10 text-xs text-slate-400 font-bold">No public complaints registered yet.</div>
-          ) : (
-            recentComplaints.map((comp) => {
-              const isCrit = ['Critical', 'Emergency'].includes(comp.priority);
-              const isRes = comp.status === 'Resolved';
-              
-              const statusColors = isRes
-                ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                : isCrit
-                ? 'bg-rose-50 text-rose-600 border-rose-100'
-                : comp.status === 'In_Progress' || comp.status === 'Assigned'
-                ? 'bg-amber-50 text-amber-600 border-amber-100'
-                : 'bg-blue-50 text-blue-600 border-blue-100';
+        <div className="max-h-[600px] overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {recentComplaints.length === 0 ? (
+              <div className="col-span-full text-center py-10 text-xs text-slate-400 font-bold">No public complaints registered yet.</div>
+            ) : (
+              recentComplaints.map((comp) => {
+                const isCrit = ['Critical', 'Emergency'].includes(comp.priority);
+                const isRes = comp.status === 'Resolved';
+                
+                const statusColors = isRes
+                  ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                  : isCrit
+                  ? 'bg-rose-50 text-rose-600 border-rose-100'
+                  : comp.status === 'In_Progress' || comp.status === 'Assigned'
+                  ? 'bg-amber-50 text-amber-600 border-amber-100'
+                  : 'bg-blue-50 text-blue-600 border-blue-100';
 
-              const reportCommentsCount = comments.filter(c => c.reportId === comp.id).length;
-              const hasUpvoted = userLikes ? userLikes.includes(comp.id) : false;
+                const reportCommentsCount = comments.filter(c => c.reportId === comp.id).length;
+                const hasUpvoted = userLikes ? userLikes.includes(comp.id) : false;
 
-              return (
-                <div 
-                  key={comp.id} 
-                  onClick={() => setActiveComplaintId(comp.id)}
-                  className="bg-white border border-slate-200 hover:border-blue-400 hover:shadow-md cursor-pointer hover:scale-[1.01] transition-all duration-200 rounded-2xl overflow-hidden flex flex-col sm:flex-row min-h-[170px]"
-                >
-                  {/* Card Media Preview */}
-                  <div className="w-full sm:w-44 h-36 sm:h-auto bg-slate-50 flex-shrink-0 relative overflow-hidden">
-                    <MediaPreview report={comp} onClickMedia={(idx) => openLightboxForReport(comp, idx)} />
-                    <span className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide pointer-events-none z-10">
-                      {comp.wardId ? `Ward ${comp.wardId}` : 'Ghorahi'}
-                    </span>
-                  </div>
-
-                  {/* Card Text & Engagement Details */}
-                  <div className="p-4 flex-1 flex flex-col justify-between min-w-0 space-y-3">
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-start gap-2">
-                        <span className="text-[8.5px] font-extrabold uppercase tracking-wider text-blue-600">{t(comp.category)}</span>
-                        <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 border rounded-lg tracking-wider shrink-0 select-none ${statusColors}`}>
-                          {t(comp.status).replace('_', ' ')}
-                        </span>
-                      </div>
-                      <h4 className="text-xs font-extrabold text-slate-800 line-clamp-1">{comp.title}</h4>
-                      <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed font-bold">{comp.description}</p>
+                return (
+                  <div 
+                    key={comp.id} 
+                    onClick={() => setActiveComplaintId(comp.id)}
+                    className="bg-white border border-slate-200 hover:border-blue-400 hover:shadow-md cursor-pointer hover:scale-[1.01] transition-all duration-200 rounded-2xl overflow-hidden flex flex-col sm:flex-row min-h-[170px]"
+                  >
+                    {/* Card Media Preview */}
+                    <div className="w-full sm:w-44 h-36 sm:h-auto bg-slate-50 flex-shrink-0 relative overflow-hidden">
+                      <MediaPreview report={comp} onClickMedia={(idx) => openLightboxForReport(comp, idx)} />
+                      <span className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide pointer-events-none z-10">
+                        {comp.wardId ? `Ward ${comp.wardId}` : 'Ghorahi'}
+                      </span>
                     </div>
 
-                    <div className="space-y-2 border-t border-slate-100 pt-2.5">
-                      {/* Duplicate Readout Tracker */}
-                      <p className="text-[8.5px] font-extrabold text-slate-500 flex items-center gap-1 select-none">
-                        <Users className="w-3 h-3 text-slate-400" />
-                        <span>This issue has been flagged by {comp.duplicateCount || 0} citizens near you.</span>
-                      </p>
+                    {/* Card Text & Engagement Details */}
+                    <div className="p-4 flex-1 flex flex-col justify-between min-w-0 space-y-3">
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-start gap-2">
+                          <span className="text-[8.5px] font-extrabold uppercase tracking-wider text-blue-600">{t(comp.category)}</span>
+                          <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 border rounded-lg tracking-wider shrink-0 select-none ${statusColors}`}>
+                            {t(comp.status).replace('_', ' ')}
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-extrabold text-slate-800 line-clamp-1">{comp.title}</h4>
+                        <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed font-bold">{comp.description}</p>
+                      </div>
 
-                      <div className="flex justify-between items-center text-[9px] font-bold text-slate-400">
-                        <span>{formatBsDate(comp.createdAt)}</span>
-                        
-                        {/* Interaction Actions */}
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={(e) => handleLike(comp.id, e)}
-                            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-colors cursor-pointer ${
-                              hasUpvoted
-                                ? 'bg-blue-50 border-blue-200 text-blue-600 font-extrabold'
-                                : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
-                            }`}
-                            title="Upvote / Support"
-                          >
-                            <ThumbsUp className="w-3.5 h-3.5" />
-                            <span>{comp.supportCount}</span>
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveComplaintId(comp.id);
-                            }}
-                            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border bg-white border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
-                            title="Comments"
-                          >
-                            <MessageCircle className="w-3.5 h-3.5" />
-                            <span>{reportCommentsCount}</span>
-                          </button>
+                      <div className="space-y-2 border-t border-slate-100 pt-2.5">
+                        {/* Duplicate Readout Tracker */}
+                        <p className="text-[8.5px] font-extrabold text-slate-500 flex items-center gap-1 select-none">
+                          <Users className="w-3 h-3 text-slate-400" />
+                          <span>This issue has been flagged by {comp.duplicateCount || 0} citizens near you.</span>
+                        </p>
+
+                        <div className="flex justify-between items-center text-[9px] font-bold text-slate-400">
+                          <span>{formatBsDate(comp.createdAt)}</span>
+                          
+                          {/* Interaction Actions */}
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={(e) => handleLike(comp.id, e)}
+                              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-colors cursor-pointer ${
+                                hasUpvoted
+                                  ? 'bg-blue-50 border-blue-200 text-blue-600 font-extrabold'
+                                  : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                              }`}
+                              title="Upvote / Support"
+                            >
+                              <ThumbsUp className="w-3.5 h-3.5" />
+                              <span>{comp.supportCount}</span>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveComplaintId(comp.id);
+                              }}
+                              className="flex items-center gap-1.5 px-2 py-1 rounded-lg border bg-white border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
+                              title="Comments"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              <span>{reportCommentsCount}</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })
-          )}
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
 
