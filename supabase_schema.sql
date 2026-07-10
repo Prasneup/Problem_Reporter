@@ -207,6 +207,22 @@ CREATE POLICY "Officers can manage all reports" ON public.reports FOR ALL USING 
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('Ward Officer', 'Municipality Officer', 'District Administrator', 'Super Admin'))
 );
 
+-- Write/Update Policies for Report Media, Comments, and Votes
+ALTER TABLE public.report_videos ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public videos read" ON public.report_videos FOR SELECT USING (true);
+
+CREATE POLICY "Authenticated users can insert report images" ON public.report_images FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can insert report videos" ON public.report_videos FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can insert comments" ON public.comments FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can insert support votes" ON public.support_votes FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can delete their own support votes" ON public.support_votes FOR DELETE USING (auth.role() = 'authenticated' AND auth.uid() = user_id);
+
+-- Policies for Notifications
+CREATE POLICY "Authenticated users can read their own notifications" ON public.notifications FOR SELECT USING (auth.role() = 'authenticated' AND auth.uid() = user_id);
+CREATE POLICY "Authenticated users can insert notifications" ON public.notifications FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can update their own notifications" ON public.notifications FOR UPDATE USING (auth.role() = 'authenticated' AND auth.uid() = user_id);
+
+
 -- Seed Municipalities and Wards for Dang District
 
 -- Create Temp Table for bulk inserting municipalities and mapping wards
