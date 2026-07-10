@@ -1,7 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")
-const ADMIN_EMAILS = ["admin1@example.com", "admin2@example.com", "admin3@example.com"] // Replace with your actual admin emails
+const ADMIN_EMAILS = [
+  "prasannaneupane723@gmail.com",
+  "friend1@example.com", // Replace with your first friend's email
+  "friend2@example.com"  // Replace with your second friend's email
+]
 
 serve(async (req) => {
   try {
