@@ -995,9 +995,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
             </h3>
             <p className="text-[9.5px] text-slate-500 font-bold mt-0.5">Explore active issues, support fellow citizens, and view real-time resolution logs.</p>
           </div>
-          <span onClick={() => setCurrentTab('my-reports')} className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer">
-            {language === 'en' ? 'View My list' : 'मेरो सूची हेर्नुहोस्'}
-          </span>
         </div>
 
         <div className="max-h-[600px] overflow-y-auto pr-1">
