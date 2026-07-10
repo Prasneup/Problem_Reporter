@@ -163,8 +163,12 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       if (tempVideo.duration > 60) {
         setVideoError("Video duration exceeds 60 seconds.");
       } else {
-        // Set mock/local preview
-        setVideoUrl('https://www.w3schools.com/html/mov_bbb.mp4'); // standard mock stream
+        // Read file as base64
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setVideoUrl(reader.result as string);
+        };
+        reader.readAsDataURL(file);
       }
     };
     tempVideo.src = window.URL.createObjectURL(file);
@@ -218,7 +222,8 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       isEmergency,
       budgetEstimated: isEmergency ? 250000 : 45000,
       budgetSpent: 0,
-      imageUrl: imgUrl || undefined,
+      imageUrls: uploadedImages,
+      videoUrl: videoUrl || undefined,
       aiAnalysis: aiAnalysisDetails ? {
         ...aiAnalysisDetails,
         trustScore,

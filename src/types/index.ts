@@ -51,6 +51,13 @@ export interface ReportImage {
   createdAt: string;
 }
 
+export interface ReportVideo {
+  id: string;
+  reportId: string;
+  url: string;
+  createdAt: string;
+}
+
 export interface Report {
   id: string;
   title: string;
@@ -73,6 +80,7 @@ export interface Report {
   createdAt: string;
   updatedAt: string;
   images: ReportImage[];
+  videos?: ReportVideo[];
   upvotes?: number;
   upvotedByMe?: boolean;
   mediaUrls?: string[];

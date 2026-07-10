@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { Report, Comment, WardBudget, ReportImage, ReportCategory, PriorityLevel, ReportStatus, UserRole, Notification } from '../types';
+import type { Report, Comment, WardBudget, ReportImage, ReportCategory, PriorityLevel, ReportStatus, UserRole, Notification, ReportVideo } from '../types';
 import { authService } from './authService';
 
 interface DbReportImageRow {
@@ -40,6 +40,14 @@ interface DbReportRow {
   created_at: string;
   updated_at: string;
   report_images?: DbReportImageRow[];
+  report_videos?: DbReportVideoRow[];
+}
+
+interface DbReportVideoRow {
+  id: string;
+  report_id: string;
+  url: string;
+  created_at: string;
 }
 
 interface DbCommentWithProfile {
@@ -70,7 +78,7 @@ export const reportService = {
 
     const { data, error } = await supabase
       .from('reports')
-      .select('*, report_images(*)')
+      .select('*, report_images(*), report_videos(*)')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -108,13 +116,19 @@ export const reportService = {
           imageType: img.image_type,
           aiAnalysis: img.ai_analysis || undefined,
           createdAt: img.created_at
+        })),
+        videos: (r.report_videos || []).map((v) => ({
+          id: v.id,
+          reportId: v.report_id,
+          url: v.url,
+          createdAt: v.created_at
         }))
       };
     });
   },
 
   async submitReport(
-    report: Omit<Report, 'id' | 'reporterId' | 'status' | 'priority' | 'supportCount' | 'duplicateCount' | 'createdAt' | 'updatedAt' | 'images'> & { imageUrl?: string; reporterId: string; priority: PriorityLevel; status: ReportStatus; aiAnalysis?: any }
+    report: Omit<Report, 'id' | 'reporterId' | 'status' | 'priority' | 'supportCount' | 'duplicateCount' | 'createdAt' | 'updatedAt' | 'images' | 'videos'> & { imageUrls?: string[]; videoUrl?: string; reporterId: string; priority: PriorityLevel; status: ReportStatus; aiAnalysis?: any }
   ): Promise<Report> {
     await authService.ensureMappings();
 
@@ -149,35 +163,58 @@ export const reportService = {
     if (error || !insertedReport) throw error || new Error('Report submission failed');
 
     const images: ReportImage[] = [];
-    if (report.imageUrl) {
-      const imgRow = {
-        report_id: insertedReport.id,
-        url: report.imageUrl,
-        image_type: 'before',
-        ai_analysis: report.aiAnalysis || {
-          category: report.category,
-          confidence: 0.95,
-          qualityScore: 0.88,
-          issuesDetected: [report.category.toLowerCase().replace(' ', '_')],
-          isFake: false,
-          isBlurry: false
-        }
-      };
+    if (report.imageUrls && report.imageUrls.length > 0) {
+      for (const url of report.imageUrls) {
+        const imgRow = {
+          report_id: insertedReport.id,
+          url: url,
+          image_type: 'before',
+          ai_analysis: report.aiAnalysis || {
+            category: report.category,
+            confidence: 0.95,
+            qualityScore: 0.88,
+            issuesDetected: [report.category.toLowerCase().replace(' ', '_')],
+            isFake: false,
+            isBlurry: false
+          }
+        };
 
-      const { data: insertedImage } = await supabase
-        .from('report_images')
-        .insert(imgRow)
+        const { data: insertedImage } = await supabase
+          .from('report_images')
+          .insert(imgRow)
+          .select()
+          .single();
+
+        if (insertedImage) {
+          images.push({
+            id: insertedImage.id,
+            reportId: insertedImage.report_id,
+            url: insertedImage.url,
+            imageType: 'before',
+            aiAnalysis: insertedImage.ai_analysis,
+            createdAt: insertedImage.created_at
+          });
+        }
+      }
+    }
+
+    const videos: ReportVideo[] = [];
+    if (report.videoUrl) {
+      const { data: insertedVideo } = await supabase
+        .from('report_videos')
+        .insert({
+          report_id: insertedReport.id,
+          url: report.videoUrl
+        })
         .select()
         .single();
 
-      if (insertedImage) {
-        images.push({
-          id: insertedImage.id,
-          reportId: insertedImage.report_id,
-          url: insertedImage.url,
-          imageType: 'before',
-          aiAnalysis: insertedImage.ai_analysis,
-          createdAt: insertedImage.created_at
+      if (insertedVideo) {
+        videos.push({
+          id: insertedVideo.id,
+          reportId: insertedVideo.report_id,
+          url: insertedVideo.url,
+          createdAt: insertedVideo.created_at
         });
       }
     }
@@ -189,7 +226,8 @@ export const reportService = {
       duplicateCount: 0,
       createdAt: insertedReport.created_at,
       updatedAt: insertedReport.updated_at,
-      images
+      images,
+      videos
     } as Report;
   },
 

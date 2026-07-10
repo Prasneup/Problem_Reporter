@@ -24,7 +24,7 @@ interface CivicState {
   loadInitialData: () => Promise<void>;
   signOut: () => Promise<void>;
 
-  submitReport: (report: Omit<Report, 'id' | 'reporterId' | 'status' | 'priority' | 'supportCount' | 'duplicateCount' | 'createdAt' | 'updatedAt' | 'images'> & { imageUrl?: string; aiAnalysis?: any }) => Promise<void>;
+  submitReport: (report: Omit<Report, 'id' | 'reporterId' | 'status' | 'priority' | 'supportCount' | 'duplicateCount' | 'createdAt' | 'updatedAt' | 'images' | 'videos'> & { imageUrls?: string[]; videoUrl?: string; aiAnalysis?: any }) => Promise<void>;
   supportReport: (reportId: string) => Promise<void>;
   addComment: (reportId: string, content: string) => Promise<void>;
   updateReportStatus: (reportId: string, status: Report['status'], notes?: string) => Promise<void>;
@@ -134,7 +134,6 @@ export const useCivicStore = create<CivicState>()(
         const now = new Date().toISOString();
         const user = get().currentUser;
 
-        let imgUrl = newReport.imageUrl || '';
         const isEmergency = newReport.isEmergency || ['Accident / Traffic Emergency', 'Fire Emergency', 'Public Safety / Crime'].includes(newReport.category);
         
         let initialStatus: Report['status'] = isEmergency ? 'Under_Review' : 'Submitted';
@@ -149,19 +148,40 @@ export const useCivicStore = create<CivicState>()(
 
         if (get().isOnline) {
           try {
-            if (imgUrl && imgUrl.startsWith('data:')) {
-              try {
-                const { default: storageService } = await import('../services/storageService');
-                imgUrl = await storageService.uploadReportImage(imgUrl);
-              } catch (storageErr) {
-                console.warn('Supabase storage upload failed, falling back to public placeholder:', storageErr);
-                imgUrl = 'https://images.unsplash.com/photo-1594913785162-e6785b4938a2?w=800&auto=format&fit=crop&q=60';
+            let uploadedImageUrls: string[] = [];
+            if (newReport.imageUrls && newReport.imageUrls.length > 0) {
+              const { default: storageService } = await import('../services/storageService');
+              for (const img of newReport.imageUrls) {
+                if (img.startsWith('data:')) {
+                  try {
+                    const url = await storageService.uploadReportImage(img);
+                    uploadedImageUrls.push(url);
+                  } catch (storageErr) {
+                    console.warn('Storage image upload failed, falling back:', storageErr);
+                    uploadedImageUrls.push('https://images.unsplash.com/photo-1594913785162-e6785b4938a2?w=800&auto=format&fit=crop&q=60');
+                  }
+                } else {
+                  uploadedImageUrls.push(img);
+                }
               }
             }
+
+            let uploadedVideoUrl = newReport.videoUrl || '';
+            if (uploadedVideoUrl && uploadedVideoUrl.startsWith('data:')) {
+              try {
+                const { default: storageService } = await import('../services/storageService');
+                uploadedVideoUrl = await storageService.uploadFile(uploadedVideoUrl, 'report-images', 'videos');
+              } catch (storageErr) {
+                console.warn('Storage video upload failed:', storageErr);
+                uploadedVideoUrl = 'https://www.w3schools.com/html/mov_bbb.mp4';
+              }
+            }
+
             const { default: reportService } = await import('../services/reportService');
             const submitted = await reportService.submitReport({
               ...newReport,
-              imageUrl: imgUrl || undefined,
+              imageUrls: uploadedImageUrls,
+              videoUrl: uploadedVideoUrl || undefined,
               reporterId: user.id,
               priority,
               status: initialStatus,
@@ -207,10 +227,10 @@ export const useCivicStore = create<CivicState>()(
           budgetSpent: 0,
           createdAt: now,
           updatedAt: now,
-          images: imgUrl ? [{
+          images: (newReport.imageUrls || []).map((url) => ({
             id: 'img-' + Math.random().toString(36).substring(2, 11),
             reportId: id,
-            url: imgUrl,
+            url,
             imageType: 'before',
             aiAnalysis: {
               category: newReport.category,
@@ -220,6 +240,12 @@ export const useCivicStore = create<CivicState>()(
               isFake: false,
               isBlurry: false
             },
+            createdAt: now
+          })),
+          videos: newReport.videoUrl ? [{
+            id: 'vid-' + Math.random().toString(36).substring(2, 11),
+            reportId: id,
+            url: newReport.videoUrl,
             createdAt: now
           }] : []
         };

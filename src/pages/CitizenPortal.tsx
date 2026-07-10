@@ -8,8 +8,9 @@ import { useTranslation } from '../hooks/useTranslation';
 import {
   AlertTriangle, Sun, Clock, Users, Phone, Map, FileText, 
   MessageCircle, Info, CheckCircle, RefreshCw, EyeOff, Award, Globe, 
-  MessageSquare, Shield, ArrowRight, ThumbsUp, Send, X, MapPin
+  MessageSquare, Shield, ArrowRight, ThumbsUp, Send, X, MapPin, Play
 } from 'lucide-react';
+import { MediaLightbox } from '../components/common/MediaLightbox';
 import ghorahiBanner from '../assets/ghorahi_banner.jpg';
 
 
@@ -26,6 +27,120 @@ const CATEGORY_IMAGES: Record<string, string> = {
   'Drainage / Sewer': 'https://images.unsplash.com/photo-1542060748-10c28b629f6f?w=400&auto=format&fit=crop&q=60',
   'Street Lighting / Utilities': 'https://images.unsplash.com/photo-1509395062183-67c5ad6faff9?w=400&auto=format&fit=crop&q=60',
   default: 'https://images.unsplash.com/photo-1584467541268-b040f83be3fd?w=400&auto=format&fit=crop&q=60'
+};
+
+const MediaPreview: React.FC<{ report: any; onClickMedia: (idx: number) => void }> = ({ report, onClickMedia }) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const hasVideo = report.videos && report.videos.length > 0;
+  const hasImages = report.images && report.images.length > 0;
+  
+  // Resolve first cover media
+  let mediaUrl = '';
+  let mediaType: 'image' | 'video' = 'image';
+
+  if (hasVideo) {
+    mediaUrl = report.videos[0].url;
+    mediaType = 'video';
+  } else if (hasImages) {
+    mediaUrl = report.images[0].url;
+    mediaType = 'image';
+  } else {
+    // Fallback static placeholder
+    mediaUrl = CATEGORY_IMAGES[report.category] || CATEGORY_IMAGES.default;
+    mediaType = 'image';
+  }
+
+  // Calculate remaining count
+  const imageCount = report.images?.length || 0;
+  const videoCount = report.videos?.length || 0;
+  const totalCount = imageCount + videoCount;
+
+  useEffect(() => {
+    // Reset state when report changes
+    setLoading(true);
+    setError(false);
+  }, [report.id]);
+
+  const handleMediaClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!hasImages && !hasVideo) return; // ignore static placeholders
+    onClickMedia(0); // open first item
+  };
+
+  return (
+    <div 
+      onClick={handleMediaClick}
+      className="w-full h-full relative overflow-hidden group cursor-pointer"
+    >
+      {/* Loading Skeleton */}
+      {loading && (
+        <div className="absolute inset-0 bg-slate-100 animate-pulse flex items-center justify-center">
+          <RefreshCw className="w-5 h-5 text-slate-300 animate-spin" />
+        </div>
+      )}
+
+      {/* Media Rendering */}
+      {mediaType === 'video' ? (
+        <div className="w-full h-full relative bg-slate-950">
+          <video
+            src={mediaUrl}
+            className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+              loading ? 'opacity-0' : 'opacity-100'
+            }`}
+            preload="metadata"
+            muted
+            onLoadedData={() => setLoading(false)}
+            onError={() => {
+              setLoading(false);
+              setError(true);
+            }}
+          />
+          {!loading && !error && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+              <div className="p-2 bg-white/95 text-slate-800 rounded-full shadow-lg scale-95 group-hover:scale-105 transition-all">
+                <Play className="w-3.5 h-3.5 fill-current text-blue-600" />
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <img
+          src={error ? CATEGORY_IMAGES[report.category] || CATEGORY_IMAGES.default : mediaUrl}
+          alt={report.title}
+          className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+            loading ? 'opacity-0' : 'opacity-100'
+          }`}
+          loading="lazy"
+          onLoad={() => setLoading(false)}
+          onError={() => {
+            setLoading(false);
+            setError(true);
+          }}
+        />
+      )}
+
+      {/* Media Type & Count Badges */}
+      {!loading && (
+        <>
+          {/* Top Left: Media Format Badge */}
+          {(hasVideo || hasImages) && (
+            <span className="absolute top-2.5 left-2.5 bg-blue-600/90 text-white px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide shadow-sm z-10">
+              {hasVideo ? 'Video' : 'Image'}
+            </span>
+          )}
+
+          {/* Bottom Right: Multiple Media Indicator Badge */}
+          {totalCount > 1 && (
+            <span className="absolute bottom-2.5 right-2.5 bg-black/75 backdrop-blur-sm text-white px-2 py-0.5 rounded-lg text-[8px] font-extrabold shadow-sm z-10">
+              +{totalCount - 1} Media
+            </span>
+          )}
+        </>
+      )}
+    </div>
+  );
 };
 
 // Self-contained coordinates display map inside detail modal
@@ -57,6 +172,26 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
   // Refactored State Pattern: Explicit Selected Complaint Id tracking
   const [activeComplaintId, setActiveComplaintId] = useState<string | null>(null);
   const [newCommentText, setNewCommentText] = useState('');
+
+  // Lightbox Media Viewer State
+  const [lightboxData, setLightboxData] = useState<{ mediaList: { type: 'image' | 'video'; url: string; title: string }[]; initialIndex: number } | null>(null);
+
+  const openLightboxForReport = (report: any, initialIndex: number = 0) => {
+    const list: { type: 'image' | 'video'; url: string; title: string }[] = [];
+    if (report.videos && report.videos.length > 0) {
+      report.videos.forEach((v: any) => {
+        list.push({ type: 'video', url: v.url, title: report.title });
+      });
+    }
+    if (report.images && report.images.length > 0) {
+      report.images.forEach((img: any) => {
+        list.push({ type: 'image', url: img.url, title: report.title });
+      });
+    }
+    if (list.length > 0) {
+      setLightboxData({ mediaList: list, initialIndex });
+    }
+  };
 
   // Local dialog overlays
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
@@ -469,10 +604,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                 ? 'bg-amber-50 text-amber-600 border-amber-100'
                 : 'bg-blue-50 text-blue-600 border-blue-100';
 
-              const fallbackImg = comp.images && comp.images.length > 0
-                ? comp.images[0].url
-                : CATEGORY_IMAGES[comp.category] || CATEGORY_IMAGES.default;
-
               const reportCommentsCount = comments.filter(c => c.reportId === comp.id).length;
               const hasUpvoted = userLikes ? userLikes.includes(comp.id) : false;
 
@@ -484,8 +615,8 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                 >
                   {/* Card Media Preview */}
                   <div className="w-full sm:w-44 h-36 sm:h-auto bg-slate-50 flex-shrink-0 relative overflow-hidden">
-                    <img src={fallbackImg} alt={comp.title} className="w-full h-full object-cover" />
-                    <span className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide">
+                    <MediaPreview report={comp} onClickMedia={(idx) => openLightboxForReport(comp, idx)} />
+                    <span className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide pointer-events-none z-10">
                       {comp.wardId ? `Ward ${comp.wardId}` : 'Ghorahi'}
                     </span>
                   </div>
@@ -682,14 +813,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                 
                 {/* Large Media proof preview */}
                 <div className="w-full h-44 bg-slate-100 rounded-2xl overflow-hidden border border-slate-150 shadow-sm relative">
-                  <img 
-                    src={activeComplaint.images && activeComplaint.images.length > 0
-                      ? activeComplaint.images[0].url
-                      : CATEGORY_IMAGES[activeComplaint.category] || CATEGORY_IMAGES.default
-                    } 
-                    alt={activeComplaint.title} 
-                    className="w-full h-full object-cover" 
-                  />
+                  <MediaPreview report={activeComplaint} onClickMedia={(idx) => openLightboxForReport(activeComplaint, idx)} />
                 </div>
 
                 <div className="space-y-1.5 text-xs text-slate-650 font-bold">
@@ -827,6 +951,15 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
             </button>
           </div>
         </div>
+      )}
+
+      {/* Lightbox Media Viewer Overlay */}
+      {lightboxData && (
+        <MediaLightbox
+          mediaList={lightboxData.mediaList}
+          initialIndex={lightboxData.initialIndex}
+          onClose={() => setLightboxData(null)}
+        />
       )}
     </div>
   );
