@@ -25,7 +25,11 @@ const CATEGORY_IMAGES: Record<string, string> = {
   'Road Damage': 'https://images.unsplash.com/photo-1515162305285-0293e4767cc2?w=400&auto=format&fit=crop&q=60',
   'Water Supply Problems': 'https://images.unsplash.com/photo-1581093588401-f3c22d75ba2e?w=400&auto=format&fit=crop&q=60',
   'Drainage / Sewer': 'https://images.unsplash.com/photo-1542060748-10c28b629f6f?w=400&auto=format&fit=crop&q=60',
-  'Street Lighting / Utilities': 'https://images.unsplash.com/photo-1509395062183-67c5ad6faff9?w=400&auto=format&fit=crop&q=60',
+  'Street Light / Electricity': 'https://images.unsplash.com/photo-1509395062183-67c5ad6faff9?w=400&auto=format&fit=crop&q=60',
+  'Public Infrastructure': 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?w=400&auto=format&fit=crop&q=60',
+  'Accident / Traffic Emergency': 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?w=400&auto=format&fit=crop&q=60',
+  'Fire Emergency': 'https://images.unsplash.com/photo-1508873696983-2df519f0397e?w=400&auto=format&fit=crop&q=60',
+  'Public Safety / Crime': 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400&auto=format&fit=crop&q=60',
   default: 'https://images.unsplash.com/photo-1584467541268-b040f83be3fd?w=400&auto=format&fit=crop&q=60'
 };
 

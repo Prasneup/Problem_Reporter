@@ -157,8 +157,8 @@ export const useCivicStore = create<CivicState>()(
                     const url = await storageService.uploadReportImage(img);
                     uploadedImageUrls.push(url);
                   } catch (storageErr) {
-                    console.warn('Storage image upload failed, falling back:', storageErr);
-                    uploadedImageUrls.push('https://images.unsplash.com/photo-1594913785162-e6785b4938a2?w=800&auto=format&fit=crop&q=60');
+                    console.warn('Storage image upload failed, falling back to base64:', storageErr);
+                    uploadedImageUrls.push(img);
                   }
                 } else {
                   uploadedImageUrls.push(img);
@@ -172,8 +172,8 @@ export const useCivicStore = create<CivicState>()(
                 const { default: storageService } = await import('../services/storageService');
                 uploadedVideoUrl = await storageService.uploadFile(uploadedVideoUrl, 'report-images', 'videos');
               } catch (storageErr) {
-                console.warn('Storage video upload failed:', storageErr);
-                uploadedVideoUrl = 'https://www.w3schools.com/html/mov_bbb.mp4';
+                console.warn('Storage video upload failed, keeping base64:', storageErr);
+                // Keep the base64 string
               }
             }
 
