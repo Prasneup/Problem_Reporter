@@ -43,11 +43,11 @@ export const Login: React.FC = () => {
             <LogIn className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-800 font-sans">Ghorahi Sub-Metropolitan Portal</h2>
-          <p className="text-slate-450 text-xs mt-1 font-bold">Smart City Problem Reporter Platform</p>
+          <p className="text-slate-500 text-xs mt-1 font-bold">Smart City Problem Reporter Platform</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-red-650 text-xs flex items-center gap-2 mb-6 animate-pulse font-bold">
+          <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-red-600 text-xs flex items-center gap-2 mb-6 animate-pulse font-bold">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>

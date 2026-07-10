@@ -135,13 +135,13 @@ export const Navbar: React.FC = () => {
             />
             <div className="text-left hidden lg:block select-none">
               <div className="text-xs font-bold text-slate-700 leading-tight group-hover:text-blue-600 transition-colors">{currentUser.name}</div>
-              <div className="text-[9px] text-slate-450 leading-none font-bold mt-0.5">{currentUser.role}</div>
+              <div className="text-[9px] text-slate-500 leading-none font-bold mt-0.5">{currentUser.role}</div>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden lg:block group-hover:text-slate-650 transition-colors" />
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden lg:block group-hover:text-slate-600 transition-colors" />
           </button>
 
           {showProfileMenu && (
-            <div className="absolute right-0 mt-3 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150 font-bold text-xs text-slate-650">
+            <div className="absolute right-0 mt-3 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150 font-bold text-xs text-slate-600">
               <div className="px-3 py-2 border-b border-slate-100 text-[10px] text-slate-400 uppercase tracking-wider select-none">
                 Logged in Account
               </div>

@@ -47,7 +47,7 @@ export const DepartmentPortal: React.FC = () => {
   const getStatusBadge = (status: ReportStatus) => {
     switch (status) {
       case 'Assigned':
-        return 'bg-blue-50 text-blue-600 border-blue-150';
+        return 'bg-blue-50 text-blue-600 border-blue-200';
       case 'In_Progress':
         return 'bg-indigo-50 text-indigo-600 border-indigo-100 animate-pulse';
       case 'Resolved':
@@ -55,7 +55,7 @@ export const DepartmentPortal: React.FC = () => {
       case 'Closed':
         return 'bg-slate-100 text-slate-500 border-slate-200';
       default:
-        return 'bg-slate-50 text-slate-550 border-slate-100';
+        return 'bg-slate-50 text-slate-600 border-slate-100';
     }
   };
 
@@ -70,7 +70,7 @@ export const DepartmentPortal: React.FC = () => {
       case 'Medium':
         return 'bg-blue-50 text-blue-600 border-blue-100';
       default:
-        return 'bg-slate-100 text-slate-650 border-slate-200';
+        return 'bg-slate-100 text-slate-600 border-slate-200';
     }
   };
 
@@ -146,7 +146,7 @@ export const DepartmentPortal: React.FC = () => {
                     <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50/50 text-slate-600 font-semibold">
                       <td className="py-3.5 px-3 min-w-[200px]">
                         <div className="font-bold text-slate-800 leading-tight">{r.title}</div>
-                        <div className="text-[10px] text-slate-450 mt-1 flex items-center gap-1">
+                        <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
                           <MapPin className="w-3 h-3 flex-shrink-0" />
                           <span className="truncate max-w-[200px]">{r.address}</span>
                         </div>
@@ -192,19 +192,19 @@ export const DepartmentPortal: React.FC = () => {
           {!selectedReportId ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-400">
               <Briefcase className="w-8 h-8 text-slate-350 mb-2.5" />
-              <div className="text-xs font-bold text-slate-655">No Complaint Selected</div>
+              <div className="text-xs font-bold text-slate-700">No Complaint Selected</div>
               <p className="text-[10px] text-slate-400 mt-1 max-w-[200px]">Click "Process" on any complaint in your queue to update its progress or resolve it.</p>
             </div>
           ) : (
             <form onSubmit={handleUpdate} className="space-y-4 flex-1 flex flex-col text-xs font-bold">
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5 text-slate-655">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5 text-slate-700">
                 <div className="text-slate-800 font-extrabold truncate text-xs">{selectedReport?.title}</div>
                 <div className="text-[10px] text-slate-400 font-bold truncate">Location: {selectedReport?.address}</div>
                 
                 {/* Visual Image Carousel */}
                 {selectedReport?.images && selectedReport.images.length > 0 && (
                   <div className="mt-2.5">
-                    <span className="text-[9px] font-bold text-slate-450">CITIZEN EVIDENCE:</span>
+                    <span className="text-[9px] font-bold text-slate-500">CITIZEN EVIDENCE:</span>
                     <div className="mt-1 flex gap-1.5 overflow-x-auto py-1">
                       {selectedReport.images.map((img, i) => (
                         <div key={i} className="relative w-12 h-12 rounded border border-slate-200 overflow-hidden shrink-0">

@@ -41,7 +41,7 @@ export const DuplicateChecker: React.FC<DuplicateCheckerProps> = ({
         <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 animate-bounce" />
         <div>
           <h4 className="text-sm font-bold text-amber-800">Possible Duplicate Civic Report Detected</h4>
-          <p className="text-xs text-slate-650 mt-1 font-medium">
+          <p className="text-xs text-slate-600 mt-1 font-medium">
             Our AI spatial matching detected an active report of the same category (<strong>{category}</strong>) reported close to this location.
           </p>
         </div>
@@ -58,12 +58,12 @@ export const DuplicateChecker: React.FC<DuplicateCheckerProps> = ({
         <div className="flex-1">
           <h5 className="text-xs font-bold text-slate-800">{duplicate.title}</h5>
           <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">{duplicate.description}</p>
-          <div className="flex items-center gap-3 mt-2.5 text-[9px] text-slate-450 font-bold font-mono">
+          <div className="flex items-center gap-3 mt-2.5 text-[9px] text-slate-500 font-bold font-mono">
             <span className="flex items-center gap-0.5">
               <MapPin className="w-3.5 h-3.5 text-slate-400" />
               Ward {duplicate.wardId}
             </span>
-            <span className="bg-blue-50 text-blue-600 border border-blue-150 px-1.5 py-0.5 rounded">
+            <span className="bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded">
               {duplicate.status.replace('_', ' ')}
             </span>
             <span>{duplicate.supportCount} supporters</span>
@@ -81,7 +81,7 @@ export const DuplicateChecker: React.FC<DuplicateCheckerProps> = ({
         </button>
         <button
           onClick={onConfirmNew}
-          className="flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-250/80 text-slate-650 border border-slate-200 py-2.5 px-3 rounded-xl text-xs transition-colors cursor-pointer"
+          className="flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-250/80 text-slate-600 border border-slate-200 py-2.5 px-3 rounded-xl text-xs transition-colors cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>File New Report Anyway</span>

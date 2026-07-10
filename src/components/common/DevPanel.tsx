@@ -36,7 +36,7 @@ export const DevPanel: React.FC = () => {
       <div className="flex items-center gap-2">
         <Shield className="w-4 h-4 text-blue-600 animate-pulse" />
         <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Dev Sandbox:</span>
-        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 rounded px-2 py-1 select-none font-bold text-slate-800">
+        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded px-2 py-1 select-none font-bold text-slate-800">
           <UserCheck className="w-3.5 h-3.5 text-blue-600" />
           <span className="text-[10px] truncate max-w-[180px]">
             {currentUser.name} ({currentUser.role})
@@ -84,7 +84,7 @@ export const DevPanel: React.FC = () => {
         <button
           onClick={handleReset}
           title="Reset local changes"
-          className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-[10px] font-bold rounded px-2.5 py-1.5 transition-colors text-slate-650 cursor-pointer"
+          className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-[10px] font-bold rounded px-2.5 py-1.5 transition-colors text-slate-600 cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Reset Db</span>

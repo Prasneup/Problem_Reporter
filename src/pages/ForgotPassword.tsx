@@ -36,7 +36,7 @@ export const ForgotPassword: React.FC = () => {
           <div className="inline-flex p-3 bg-blue-50 rounded-xl text-blue-600 mb-3 border border-blue-100">
             <Mail className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-850">Reset Password</h2>
+          <h2 className="text-2xl font-bold text-slate-800">Reset Password</h2>
           <p className="text-slate-400 text-xs mt-1 font-semibold">We will send a reset link to your registered email</p>
         </div>
 

@@ -237,7 +237,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
             <h4 class="font-extrabold text-slate-800 text-xs m-0 leading-tight">${r.title}</h4>
             <p class="text-[10px] text-slate-500 m-0 mt-1 font-semibold">${r.category} | Ward ${r.wardId}</p>
             <div class="mt-2.5 flex items-center justify-between">
-              <span class="inline-block px-2 py-0.5 rounded text-[8px] font-extrabold bg-blue-50 text-blue-600 border border-blue-150">${r.status.replace('_', ' ')}</span>
+              <span class="inline-block px-2 py-0.5 rounded text-[8px] font-extrabold bg-blue-50 text-blue-600 border border-blue-200">${r.status.replace('_', ' ')}</span>
               <span class="text-[8.5px] text-blue-600 underline cursor-pointer hover:text-blue-800">Check Radius</span>
             </div>
           </div>
@@ -323,7 +323,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           className={`px-3 py-1 rounded-lg text-[9px] font-extrabold uppercase transition-colors cursor-pointer ${
             !localHeatmap
               ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-550 hover:bg-slate-50'
+              : 'text-slate-600 hover:bg-slate-50'
           }`}
         >
           Pins
@@ -333,7 +333,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           className={`px-3 py-1 rounded-lg text-[9px] font-extrabold uppercase transition-colors cursor-pointer ${
             localHeatmap
               ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-550 hover:bg-slate-50'
+              : 'text-slate-600 hover:bg-slate-50'
           }`}
         >
           Heatmap
@@ -342,7 +342,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
 
       {/* Floating Selected Radius Dashboard (Bottom Center/Left) */}
       {selectedRadiusReport && (
-        <div className="absolute bottom-14 left-4 right-4 sm:right-auto sm:w-80 z-[400] bg-white/95 border border-slate-250 rounded-2xl p-4 shadow-xl backdrop-blur-sm flex flex-col space-y-3 font-bold border-l-4 border-l-blue-600 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="absolute bottom-14 left-4 right-4 sm:right-auto sm:w-80 z-[400] bg-white/95 border border-slate-200 rounded-2xl p-4 shadow-xl backdrop-blur-sm flex flex-col space-y-3 font-bold border-l-4 border-l-blue-600 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div className="flex justify-between items-start">
             <div className="space-y-0.5">
               <span className="text-[8px] font-extrabold uppercase tracking-wider text-blue-600">Active Radius Analyzer</span>
@@ -350,7 +350,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
             </div>
             <button
               onClick={() => setSelectedRadiusReport(null)}
-              className="text-slate-400 hover:text-slate-650 cursor-pointer"
+              className="text-slate-400 hover:text-slate-600 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -359,7 +359,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           <div className="bg-slate-50 border border-slate-100 rounded-xl p-2.5 flex items-center justify-between text-center select-none">
             <div>
               <span className="text-[7.5px] font-extrabold text-slate-400 uppercase">Analysis Zone</span>
-              <div className="text-xs font-extrabold text-slate-850 mt-0.5">{radiusMeters} Meters</div>
+              <div className="text-xs font-extrabold text-slate-800 mt-0.5">{radiusMeters} Meters</div>
             </div>
             <div className="border-r border-slate-200 h-6" />
             <div>
@@ -377,7 +377,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
                 className={`flex-1 py-1 rounded-lg border text-[9.5px] font-extrabold transition-colors cursor-pointer ${
                   radiusMeters === m
                     ? 'bg-blue-50 border-blue-300 text-blue-600'
-                    : 'bg-white border-slate-150 text-slate-500 hover:bg-slate-50'
+                    : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                 }`}
               >
                 {m >= 1000 ? '1 KM' : `${m}M`}

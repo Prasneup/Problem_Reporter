@@ -89,7 +89,7 @@ export const AdminPortal: React.FC = () => {
       case 'Under_Review':
         return 'bg-amber-50 text-amber-600 border-amber-200';
       case 'Assigned':
-        return 'bg-blue-50 text-blue-600 border-blue-150';
+        return 'bg-blue-50 text-blue-600 border-blue-200';
       case 'In_Progress':
         return 'bg-indigo-50 text-indigo-600 border-indigo-100 animate-pulse';
       case 'Resolved':
@@ -112,7 +112,7 @@ export const AdminPortal: React.FC = () => {
       case 'Medium':
         return 'bg-blue-50 text-blue-600 border-blue-100';
       default:
-        return 'bg-slate-100 text-slate-650 border-slate-200';
+        return 'bg-slate-100 text-slate-600 border-slate-200';
     }
   };
 
@@ -189,7 +189,7 @@ export const AdminPortal: React.FC = () => {
           {!selectedReportId ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-400">
               <Send className="w-8 h-8 text-slate-350 mb-2.5" />
-              <div className="text-xs font-bold text-slate-650">No Report Selected</div>
+              <div className="text-xs font-bold text-slate-600">No Report Selected</div>
               <p className="text-[10px] text-slate-400 mt-1 max-w-[200px]">Click on the "Forward" button of any submitted complaint in the list below to route it to a department.</p>
             </div>
           ) : (
@@ -202,9 +202,9 @@ export const AdminPortal: React.FC = () => {
                 {/* Embedded Video Evidence Player */}
                 {selectedReport?.images && selectedReport.images.length > 0 && (
                   <div className="mt-2.5 flex items-center gap-2">
-                    <span className="text-[9px] font-bold text-blue-650 bg-blue-50 border border-blue-150 px-2 py-0.5 rounded">Evidence Attached</span>
+                    <span className="text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">Evidence Attached</span>
                     {selectedReport.images[0].url.endsWith('.mp4') && (
-                      <span className="text-[9px] font-bold text-red-650 bg-red-50 border border-red-150 px-2 py-0.5 rounded flex items-center gap-1">
+                      <span className="text-[9px] font-bold text-red-600 bg-red-50 border border-red-150 px-2 py-0.5 rounded flex items-center gap-1">
                         <PlayCircle className="w-3 h-3" /> Video proof
                       </span>
                     )}
@@ -283,14 +283,14 @@ export const AdminPortal: React.FC = () => {
           <div className="flex items-center gap-2 w-full md:w-auto flex-1 md:flex-none">
             <div className="relative flex-1 md:w-64">
               <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <Search className="w-3.5 h-3.5 text-slate-450" />
+                <Search className="w-3.5 h-3.5 text-slate-500" />
               </span>
               <input 
                 type="text" 
                 placeholder="Search by Title or Address..." 
                 value={searchTerm} 
                 onChange={(e) => setSearchTerm(e.target.value)} 
-                className="w-full bg-slate-50 border border-slate-250 rounded-xl py-1.5 pl-8.5 pr-3 text-xs font-bold text-slate-700 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 transition-colors" 
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 pl-8.5 pr-3 text-xs font-bold text-slate-700 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 transition-colors" 
               />
             </div>
           </div>
@@ -299,7 +299,7 @@ export const AdminPortal: React.FC = () => {
         {/* Filter Badges Row */}
         <div className="flex flex-wrap gap-3.5 text-[10px] font-bold text-slate-500 bg-slate-50/50 p-3 rounded-xl border border-slate-200/60">
           <div className="flex items-center gap-1.5">
-            <Filter className="w-3.5 h-3.5 text-slate-450" />
+            <Filter className="w-3.5 h-3.5 text-slate-500" />
             <span>Filters:</span>
           </div>
           
@@ -354,7 +354,7 @@ export const AdminPortal: React.FC = () => {
                   <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50/50 text-slate-600 font-semibold">
                     <td className="py-3.5 px-3 min-w-[200px]">
                       <div className="font-bold text-slate-800 leading-tight">{r.title}</div>
-                      <div className="text-[10px] text-slate-450 mt-1 flex items-center gap-1">
+                      <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
                         <MapPin className="w-3 h-3 flex-shrink-0" />
                         <span className="truncate max-w-[220px]">{r.address}</span>
                       </div>
@@ -390,7 +390,7 @@ export const AdminPortal: React.FC = () => {
                       ) : (
                         <button 
                           onClick={() => setSelectedReportId(r.id)}
-                          className="bg-slate-100 hover:bg-slate-200 text-slate-655 px-3 py-1 rounded-xl text-[10px] font-bold cursor-pointer transition-colors border border-slate-250 inline-flex items-center gap-1"
+                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-xl text-[10px] font-bold cursor-pointer transition-colors border border-slate-200 inline-flex items-center gap-1"
                         >
                           <span>Review</span>
                         </button>

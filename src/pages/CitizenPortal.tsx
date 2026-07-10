@@ -234,7 +234,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'Emergency': return <span className="bg-red-100 text-red-750 border border-red-200 px-2 py-0.5 rounded text-[9px] font-extrabold flex items-center gap-1 w-max">🚨 Emergency</span>;
-      case 'Critical': return <span className="bg-red-50 text-red-650 border border-red-100 px-2 py-0.5 rounded text-[9px] font-extrabold flex items-center gap-1 w-max">🔴 Critical</span>;
+      case 'Critical': return <span className="bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded text-[9px] font-extrabold flex items-center gap-1 w-max">🔴 Critical</span>;
       case 'High': return <span className="bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded text-[9px] font-extrabold flex items-center gap-1 w-max">🟠 High</span>;
       case 'Medium': return <span className="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded text-[9px] font-extrabold flex items-center gap-1 w-max">🟡 Medium</span>;
       case 'Low':
@@ -245,7 +245,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Submitted': return <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">Submitted</span>;
-      case 'Under_Review': return <span className="bg-blue-50 text-blue-650 border border-blue-155 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">Under Review</span>;
+      case 'Under_Review': return <span className="bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">Under Review</span>;
       case 'Assigned': return <span className="bg-purple-50 text-purple-600 border border-purple-100 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">Assigned</span>;
       case 'In_Progress': return <span className="bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">In Progress</span>;
       case 'Resolved': return <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">Resolved</span>;
@@ -426,7 +426,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
     printWindow.document.close();
   };
 
-  const renderActionButton = (icon: React.ReactNode, tooltip: string, onClick: () => void, className = 'bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-650') => (
+  const renderActionButton = (icon: React.ReactNode, tooltip: string, onClick: () => void, className = 'bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600') => (
     <button
       onClick={onClick}
       title={tooltip}
@@ -572,7 +572,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
           <div>
             <h2 className="text-base font-bold text-slate-800">My Submitted Reports ({citizenReports.length})</h2>
-            <p className="text-[10px] text-slate-450 mt-0.5 font-semibold">Track, update, print receipt, or rate the resolution of your submitted grievances.</p>
+            <p className="text-[10px] text-slate-500 mt-0.5 font-semibold">Track, update, print receipt, or rate the resolution of your submitted grievances.</p>
           </div>
           <button 
             onClick={() => setCurrentTab('report-form')}
@@ -584,17 +584,17 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
         </div>
 
         {/* Dynamic Search & Filters Toolbar */}
-        <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 mb-5 text-xs font-bold text-slate-650 space-y-3">
+        <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 mb-5 text-xs font-bold text-slate-600 space-y-3">
           <div className="flex flex-col md:flex-row gap-3">
             {/* Search Input */}
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-3.5 w-4 h-4 text-slate-450" />
+              <Search className="absolute left-3 top-3.5 w-4 h-4 text-slate-500" />
               <input
                 type="text"
                 placeholder="Search by ID, keyword, title..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full bg-white border border-slate-250 rounded-lg pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 font-bold"
+                className="w-full bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 font-bold"
               />
             </div>
             
@@ -604,7 +604,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
               <select 
                 value={filterStatus}
                 onChange={e => setFilterStatus(e.target.value)}
-                className="bg-white border border-slate-250 rounded-lg px-2.5 py-2.5 text-xs font-bold text-slate-650"
+                className="bg-white border border-slate-200 rounded-lg px-2.5 py-2.5 text-xs font-bold text-slate-600"
               >
                 <option value="all">All Statuses</option>
                 <option value="Submitted">Submitted</option>
@@ -622,7 +622,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
               <select 
                 value={filterCategory}
                 onChange={e => setFilterCategory(e.target.value)}
-                className="bg-white border border-slate-250 rounded-lg px-2.5 py-2.5 text-xs font-bold text-slate-655"
+                className="bg-white border border-slate-200 rounded-lg px-2.5 py-2.5 text-xs font-bold text-slate-700"
               >
                 <option value="all">All Categories</option>
                 <option value="Garbage / Waste Management">Garbage / Waste</option>
@@ -645,7 +645,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
               <select 
                 value={filterPriority}
                 onChange={e => setFilterPriority(e.target.value)}
-                className="bg-white border border-slate-250 rounded-lg px-2 py-2 text-xs font-bold text-slate-655"
+                className="bg-white border border-slate-200 rounded-lg px-2 py-2 text-xs font-bold text-slate-700"
               >
                 <option value="all">All Priorities</option>
                 <option value="Low">Low</option>
@@ -662,7 +662,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
               <select 
                 value={filterWard}
                 onChange={e => setFilterWard(e.target.value)}
-                className="bg-white border border-slate-250 rounded-lg px-2 py-2 text-xs font-bold text-slate-655"
+                className="bg-white border border-slate-200 rounded-lg px-2 py-2 text-xs font-bold text-slate-700"
               >
                 <option value="all">All Wards</option>
                 {Array.from({ length: 19 }, (_, i) => i + 1).map(w => (
@@ -678,7 +678,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                 type="date"
                 value={filterStartDate}
                 onChange={e => setFilterStartDate(e.target.value)}
-                className="bg-white border border-slate-250 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600"
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600"
               />
             </div>
 
@@ -689,7 +689,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                 type="date"
                 value={filterEndDate}
                 onChange={e => setFilterEndDate(e.target.value)}
-                className="bg-white border border-slate-250 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600"
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600"
               />
             </div>
           </div>
@@ -716,9 +716,9 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                 </tr>
               ) : (
                 sortedReports.map(r => (
-                  <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50/60 text-slate-650 transition-colors duration-150">
+                  <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50/60 text-slate-600 transition-colors duration-150">
                     <td className="py-3 px-3 font-mono font-bold text-slate-700 text-[11px]">{getComplaintId(r.id, r.createdAt)}</td>
-                    <td className="py-3 px-3 font-bold text-slate-850 truncate max-w-[150px]" title={r.title}>{r.title}</td>
+                    <td className="py-3 px-3 font-bold text-slate-800 truncate max-w-[150px]" title={r.title}>{r.title}</td>
                     <td className="py-3 px-3 truncate max-w-[120px]">{t(r.category)}</td>
                     <td className="py-3 px-3">{getPriorityBadge(r.priority)}</td>
                     <td className="py-3 px-3">{getStatusBadge(r.status)}</td>
@@ -737,7 +737,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                         {r.status === 'Submitted' && renderActionButton(<Pencil className="w-3.5 h-3.5 text-blue-600" />, "Edit Report", () => setEditReportData(r))}
 
                         {/* 3. Delete (Submitted only) */}
-                        {r.status === 'Submitted' && renderActionButton(<Trash2 className="w-3.5 h-3.5 text-red-650" />, "Delete Report", () => setDeleteConfirmId(r.id), 'bg-red-50 hover:bg-red-100 border border-red-200')}
+                        {r.status === 'Submitted' && renderActionButton(<Trash2 className="w-3.5 h-3.5 text-red-600" />, "Delete Report", () => setDeleteConfirmId(r.id), 'bg-red-50 hover:bg-red-100 border border-red-200')}
 
                         {/* 4. GIS Location Map (Always) */}
                         {renderActionButton(<MapPin className="w-3.5 h-3.5 text-emerald-600" />, "View Location", () => setMapLocationReport(r))}
@@ -781,7 +781,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
         </div>
         <div className="flex items-center gap-4 text-[9px] font-bold">
           <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-red-400" /> Hotline: 1111</span>
-          <span className="text-blue-650">|</span>
+          <span className="text-blue-600">|</span>
           <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5 text-emerald-400" /> gunaso@ghorahimun.gov.np</span>
         </div>
       </div>
@@ -808,11 +808,11 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
             <div className="space-y-1">
               <div className="text-3xl font-extrabold text-slate-800 font-sans tracking-tight">32°C</div>
               <div className="text-xs font-extrabold text-slate-700">{language === 'en' ? 'Mostly Sunny' : 'सामान्यतया सफा'}</div>
-              <div className="text-[10px] text-slate-450 font-bold">Ghorahi, Dang</div>
+              <div className="text-[10px] text-slate-500 font-bold">Ghorahi, Dang</div>
             </div>
             <Sun className="w-10 h-10 text-amber-500 animate-spin-slow" />
           </div>
-          <div className="text-[10px] text-slate-450 border-t border-slate-100 pt-3 flex justify-between items-center font-bold">
+          <div className="text-[10px] text-slate-500 border-t border-slate-100 pt-3 flex justify-between items-center font-bold">
             <span>{getLocalDateString()}</span>
           </div>
         </div>
@@ -838,7 +838,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center ${ch.color}`}>
                   <RenderIcon />
                 </div>
-                <span className="text-[9px] font-bold text-slate-650 leading-tight">{ch.label}</span>
+                <span className="text-[9px] font-bold text-slate-600 leading-tight">{ch.label}</span>
               </div>
             );
           })}
@@ -994,7 +994,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
             <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
               {language === 'en' ? 'Interactive Public Complaints Feed' : 'नागरिकहरुका सार्वजनिक गुनासो फिड'}
             </h3>
-            <p className="text-[9.5px] text-slate-450 font-bold mt-0.5">Explore active issues, support fellow citizens, and view real-time resolution logs.</p>
+            <p className="text-[9.5px] text-slate-500 font-bold mt-0.5">Explore active issues, support fellow citizens, and view real-time resolution logs.</p>
           </div>
           <span onClick={() => setCurrentTab('my-reports')} className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer">
             {language === 'en' ? 'View My list' : 'मेरो सूची हेर्नुहोस्'}
@@ -1049,7 +1049,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
 
                     <div className="space-y-2 border-t border-slate-100 pt-2.5">
                       {/* Duplicate Readout Tracker */}
-                      <p className="text-[8.5px] font-extrabold text-slate-450 flex items-center gap-1 select-none">
+                      <p className="text-[8.5px] font-extrabold text-slate-500 flex items-center gap-1 select-none">
                         <Users className="w-3 h-3 text-slate-400" />
                         <span>This issue has been flagged by {comp.duplicateCount || 0} citizens near you.</span>
                       </p>
@@ -1063,8 +1063,8 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                             onClick={(e) => handleLike(comp.id, e)}
                             className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-colors cursor-pointer ${
                               hasUpvoted
-                                ? 'bg-blue-50 border-blue-200 text-blue-650 font-extrabold'
-                                : 'bg-white border-slate-150 text-slate-500 hover:bg-slate-50'
+                                ? 'bg-blue-50 border-blue-200 text-blue-600 font-extrabold'
+                                : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                             }`}
                             title="Upvote / Support"
                           >
@@ -1076,7 +1076,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                               e.stopPropagation();
                               setActiveComplaintId(comp.id);
                             }}
-                            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border bg-white border-slate-150 text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
+                            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border bg-white border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
                             title="Comments"
                           >
                             <MessageCircle className="w-3.5 h-3.5" />
@@ -1102,7 +1102,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
             <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
               {language === 'en' ? 'Offices with the Most Complaints Received' : 'धेरै गुनासो प्राप्त हुने महानगरका शाखा कार्यालयहरु'}
             </h3>
-            <p className="text-[9px] text-slate-450 font-bold mt-0.5">Accountability— Monitoring the offices with the most complaints to improve service and transparency</p>
+            <p className="text-[9px] text-slate-500 font-bold mt-0.5">Accountability— Monitoring the offices with the most complaints to improve service and transparency</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {deptLoad.slice(0, 6).map((dept, idx) => (
@@ -1147,7 +1147,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
       </div>
 
       {/* Contact Information Footer */}
-      <footer className="bg-white border border-slate-250 rounded-2xl p-6 shadow-sm font-sans select-none leading-relaxed">
+      <footer className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm font-sans select-none leading-relaxed">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-2 space-y-3">
             <div className="flex items-center gap-2">
@@ -1156,10 +1156,10 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
               </div>
               <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wide">Ghorahi Sub-Metropolitan Executive</h4>
             </div>
-            <p className="text-[10px] text-slate-450 font-bold leading-relaxed">
+            <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
               "Ghorahi Smart Civic Portal" is a grievance redressal platform designed to help citizens and administrative bodies engage, allowing the community to report and resolve public issues regarding infrastructure, sanitation, utilities, and emergency services directly with Ghorahi municipal authorities.
             </p>
-            <p className="text-[10px] text-slate-450 font-bold">
+            <p className="text-[10px] text-slate-500 font-bold">
               Office of the Municipal Executive, Ghorahi, Dang, Lumbini Province, Nepal
             </p>
           </div>
@@ -1174,7 +1174,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
           </div>
           <div>
             <h4 className="text-[10px] font-extrabold text-slate-800 uppercase tracking-widest mb-3">Contact Information</h4>
-            <div className="space-y-2.5 text-[10px] text-slate-650 font-bold">
+            <div className="space-y-2.5 text-[10px] text-slate-600 font-bold">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-rose-50 flex items-center justify-center text-rose-600"><Phone className="w-3.5 h-3.5" /></div>
                 <div>Hotline: <span className="font-extrabold text-slate-800 font-mono">1111</span></div>
@@ -1205,7 +1205,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
           <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-4xl h-[85vh] flex flex-col md:flex-row overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
             
             {/* Left Column: Complaint details, large image, and mini location map */}
-            <div className="w-full md:w-1/2 p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-150 overflow-y-auto max-h-[40vh] md:max-h-full space-y-4">
+            <div className="w-full md:w-1/2 p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-200 overflow-y-auto max-h-[40vh] md:max-h-full space-y-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
@@ -1225,11 +1225,11 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                 <h3 className="text-base font-extrabold text-slate-800 tracking-tight leading-tight">{activeComplaint.title}</h3>
                 
                 {/* Large Media proof preview */}
-                <div className="w-full h-44 bg-slate-100 rounded-2xl overflow-hidden border border-slate-150 shadow-sm relative">
+                <div className="w-full h-44 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative">
                   <MediaPreview report={activeComplaint} onClickMedia={(idx) => openLightboxForReport(activeComplaint, idx)} />
                 </div>
 
-                <div className="space-y-1.5 text-xs text-slate-650 font-bold">
+                <div className="space-y-1.5 text-xs text-slate-600 font-bold">
                   <p className="leading-relaxed font-semibold">{activeComplaint.description}</p>
                   <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-2 font-mono">
                     <MapPin className="w-3.5 h-3.5 text-slate-400" />
@@ -1249,7 +1249,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
             <div className="w-full md:w-1/2 flex flex-col justify-between h-[45vh] md:h-full bg-slate-50/30 relative">
               
               {/* Comments header */}
-              <div className="p-4 pl-6 border-b border-slate-150 flex items-center justify-between flex-shrink-0 bg-white z-10">
+              <div className="p-4 pl-6 border-b border-slate-200 flex items-center justify-between flex-shrink-0 bg-white z-10">
                 <div>
                   <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Public Discussion Logs</h4>
                   <p className="text-[9px] text-slate-400 font-bold mt-0.5">Citizens and officials updates</p>
@@ -1281,7 +1281,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                           key={comment.id} 
                           className={`p-3.5 rounded-2xl border text-xs leading-relaxed space-y-1.5 ${
                             isOfficial 
-                              ? 'bg-blue-50/40 border-blue-150 text-slate-700 shadow-sm' 
+                              ? 'bg-blue-50/40 border-blue-200 text-slate-700 shadow-sm' 
                               : 'bg-white border-slate-200 text-slate-600 shadow-inner-sm'
                           }`}
                         >
@@ -1306,18 +1306,18 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
               </div>
 
               {/* Pinned text input area at the bottom */}
-              <form onSubmit={handleSendComment} className="p-4 border-t border-slate-150 flex gap-2 flex-shrink-0 bg-white sticky bottom-0 z-15">
+              <form onSubmit={handleSendComment} className="p-4 border-t border-slate-200 flex gap-2 flex-shrink-0 bg-white sticky bottom-0 z-15">
                 <input
                   type="text"
                   value={newCommentText}
                   onChange={e => setNewCommentText(e.target.value)}
                   placeholder="Ask a question or offer helpful municipal info..."
-                  className="flex-1 bg-slate-50 border border-slate-250 rounded-xl px-4 py-2 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all font-semibold"
+                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all font-semibold"
                 />
                 <button
                   type="submit"
                   disabled={!newCommentText.trim()}
-                  className="bg-blue-650 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center justify-center cursor-pointer transition-colors disabled:opacity-50 text-xs font-bold"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center justify-center cursor-pointer transition-colors disabled:opacity-50 text-xs font-bold"
                 >
                   <Send className="w-3.5 h-3.5 mr-1" />
                   <span>Send</span>
@@ -1374,7 +1374,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                         {(() => {
                           switch (viewDetailReport.priority) {
                             case 'Emergency': return <span className="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[9px] font-extrabold">🚨 Emergency</span>;
-                            case 'Critical': return <span className="bg-red-50 text-red-650 border border-red-100 px-2 py-0.5 rounded text-[9px] font-extrabold">🔴 Critical</span>;
+                            case 'Critical': return <span className="bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded text-[9px] font-extrabold">🔴 Critical</span>;
                             case 'High': return <span className="bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded text-[9px] font-extrabold">🟠 High</span>;
                             case 'Medium': return <span className="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded text-[9px] font-extrabold">🟡 Medium</span>;
                             case 'Low':
@@ -1392,7 +1392,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                     </div>
                     <div>
                       <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date Submitted</h3>
-                      <p className="text-xs text-slate-650 mt-1 font-bold">{formatNepalTime(viewDetailReport.createdAt)}</p>
+                      <p className="text-xs text-slate-600 mt-1 font-bold">{formatNepalTime(viewDetailReport.createdAt)}</p>
                     </div>
                   </div>
 
@@ -1404,7 +1404,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                     </div>
                     <div>
                       <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Coordinates</h3>
-                      <p className="text-xs text-slate-850 mt-1 font-mono font-bold">{viewDetailReport.latitude.toFixed(6)}, {viewDetailReport.longitude.toFixed(6)}</p>
+                      <p className="text-xs text-slate-800 mt-1 font-mono font-bold">{viewDetailReport.latitude.toFixed(6)}, {viewDetailReport.longitude.toFixed(6)}</p>
                     </div>
                   </div>
 
@@ -1415,18 +1415,18 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                     </div>
                     <div>
                       <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Assigned Officer</h3>
-                      <p className="text-xs text-slate-850 mt-1 font-bold">{viewDetailReport.assignedOfficer || 'Not yet assigned'}</p>
+                      <p className="text-xs text-slate-800 mt-1 font-bold">{viewDetailReport.assignedOfficer || 'Not yet assigned'}</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estimated Budget</h3>
-                      <p className="text-xs text-slate-850 mt-1 font-bold font-mono">Rs. {viewDetailReport.budgetEstimated?.toLocaleString() || '0'}</p>
+                      <p className="text-xs text-slate-800 mt-1 font-bold font-mono">Rs. {viewDetailReport.budgetEstimated?.toLocaleString() || '0'}</p>
                     </div>
                     <div>
                       <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Amount Spent</h3>
-                      <p className="text-xs text-slate-850 mt-1 font-bold font-mono">Rs. {viewDetailReport.budgetSpent?.toLocaleString() || '0'}</p>
+                      <p className="text-xs text-slate-800 mt-1 font-bold font-mono">Rs. {viewDetailReport.budgetSpent?.toLocaleString() || '0'}</p>
                     </div>
                   </div>
 
@@ -1466,7 +1466,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                   <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Municipality & Citizen Discussion</h3>
                   <div className="space-y-3 max-h-[30vh] overflow-y-auto pr-1 bg-slate-50 p-3 rounded-xl border border-slate-200/50">
                     {comments.filter(c => c.reportId === viewDetailReport.id).length === 0 ? (
-                      <div className="text-center py-6 text-slate-450 font-bold">No updates or comments yet.</div>
+                      <div className="text-center py-6 text-slate-500 font-bold">No updates or comments yet.</div>
                     ) : (
                       comments.filter(c => c.reportId === viewDetailReport.id).map(c => (
                         <div key={c.id} className={`p-2.5 rounded-lg border text-[11px] ${c.isOfficialUpdate ? 'bg-amber-50/70 border-amber-100' : 'bg-white border-slate-200'}`}>
@@ -1475,9 +1475,9 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                               {c.userName} 
                               {c.isOfficialUpdate && <span className="bg-amber-600 text-white text-[8px] px-1 rounded uppercase font-extrabold">Official</span>}
                             </span>
-                            <span className="text-[9px] text-slate-450">{formatNepalTime(c.createdAt)}</span>
+                            <span className="text-[9px] text-slate-500">{formatNepalTime(c.createdAt)}</span>
                           </div>
-                          <p className="text-slate-655 font-semibold whitespace-pre-wrap">{c.content}</p>
+                          <p className="text-slate-700 font-semibold whitespace-pre-wrap">{c.content}</p>
                         </div>
                       ))
                     )}
@@ -1533,7 +1533,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                   title: (form.elements.namedItem('title') as HTMLInputElement).value,
                   description: (form.elements.namedItem('description') as HTMLTextAreaElement).value,
                   category: (form.elements.namedItem('category') as HTMLSelectElement).value,
-                  priority: (form.elements.namedItem('priority') as HTMLSelectElement).value,
+                  priority: editReportData.priority,
                   latitude: Number((form.elements.namedItem('latitude') as HTMLInputElement).value),
                   longitude: Number((form.elements.namedItem('longitude') as HTMLInputElement).value),
                   address: (form.elements.namedItem('address') as HTMLInputElement).value,
@@ -1544,46 +1544,36 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
               className="p-5 space-y-3.5 text-xs text-slate-700 font-bold"
             >
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-450 uppercase">Complaint Title</label>
+                <label className="text-[10px] text-slate-500 uppercase">Complaint Title</label>
                 <input name="title" defaultValue={editReportData.title} required className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:border-blue-500 focus:outline-none" />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-450 uppercase">Full Description</label>
+                <label className="text-[10px] text-slate-500 uppercase">Full Description</label>
                 <textarea name="description" defaultValue={editReportData.description} required rows={3} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:border-blue-500 focus:outline-none" />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-slate-450 uppercase">Category</label>
-                  <select name="category" defaultValue={editReportData.category} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:outline-none text-slate-700">
-                    {['Garbage / Waste Management', 'Road Damage', 'Water Supply Problems', 'Drainage / Sewer', 'Street Light / Electricity', 'Public Infrastructure', 'Accident / Traffic Emergency', 'Fire Emergency', 'Public Safety / Crime'].map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-slate-450 uppercase">Priority</label>
-                  <select name="priority" defaultValue={editReportData.priority} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:outline-none text-slate-700">
-                    {['Low', 'Medium', 'High', 'Critical', 'Emergency'].map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                </div>
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-500 uppercase">Category</label>
+                <select name="category" defaultValue={editReportData.category} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:outline-none text-slate-700">
+                  {['Garbage / Waste Management', 'Road Damage', 'Water Supply Problems', 'Drainage / Sewer', 'Street Light / Electricity', 'Public Infrastructure', 'Accident / Traffic Emergency', 'Fire Emergency', 'Public Safety / Crime'].map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-450 uppercase">Verified Address</label>
+                <label className="text-[10px] text-slate-500 uppercase">Verified Address</label>
                 <input name="address" defaultValue={editReportData.address} required className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:border-blue-500 focus:outline-none" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-450 uppercase">Latitude</label>
+                  <label className="text-[10px] text-slate-500 uppercase">Latitude</label>
                   <input name="latitude" type="number" step="any" defaultValue={editReportData.latitude} required className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:border-blue-500 focus:outline-none" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-450 uppercase">Longitude</label>
+                  <label className="text-[10px] text-slate-500 uppercase">Longitude</label>
                   <input name="longitude" type="number" step="any" defaultValue={editReportData.longitude} required className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:border-blue-500 focus:outline-none" />
                 </div>
               </div>
@@ -1601,19 +1591,19 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
       {deleteConfirmId && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white border border-slate-200 rounded-2xl p-5 w-full max-w-xs space-y-4 shadow-xl text-xs font-bold text-slate-700 font-sans">
-            <div className="flex items-center gap-2 text-red-650 text-sm">
+            <div className="flex items-center gap-2 text-red-600 text-sm">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <h3>Confirm Soft-Delete</h3>
             </div>
             <p className="text-slate-500">Are you sure you want to delete this report? This action cannot be undone.</p>
             <div className="flex justify-end gap-2 pt-1 font-bold">
-              <button onClick={() => setDeleteConfirmId(null)} className="px-3 py-1.5 border border-slate-250 hover:bg-slate-50 text-slate-500 rounded cursor-pointer">Cancel</button>
+              <button onClick={() => setDeleteConfirmId(null)} className="px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded cursor-pointer">Cancel</button>
               <button
                 onClick={async () => {
                   await deleteReport(deleteConfirmId);
                   setDeleteConfirmId(null);
                 }}
-                className="px-3 py-1.5 bg-red-650 hover:bg-red-700 text-white rounded cursor-pointer"
+                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded cursor-pointer"
               >
                 Delete Report
               </button>
@@ -1648,7 +1638,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white border border-slate-200 rounded-2xl p-5 w-full max-w-sm space-y-4 shadow-xl font-sans text-xs font-bold text-slate-700">
             <h3 className="text-sm font-bold text-slate-800">Rate Service Resolution</h3>
-            <p className="text-slate-550 font-semibold">How satisfied are you with Ghorahi's resolution of this complaint?</p>
+            <p className="text-slate-600 font-semibold">How satisfied are you with Ghorahi's resolution of this complaint?</p>
             
             {/* Clickable star selection */}
             <div className="flex gap-1.5 justify-center py-2">
@@ -1670,7 +1660,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                 placeholder="Optional feedback or remarks..."
                 value={ratingFeedback}
                 onChange={e => setRatingFeedback(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-655 focus:outline-none"
+                className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-700 focus:outline-none"
                 rows={3}
               />
             </div>
@@ -1697,8 +1687,8 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white border border-slate-200 rounded-2xl p-5 w-full max-w-sm space-y-4 shadow-xl font-sans text-xs font-bold text-slate-700">
             <h3 className="text-sm font-bold text-slate-800 font-sans">Reopen Resolved Complaint</h3>
-            <textarea placeholder="Describe why this is still unresolved..." value={reopenNotes} onChange={e => setReopenNotes(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-655 focus:outline-none" rows={3} />
-            <input type="text" placeholder="Upload Reopen Photo URL (optional)" value={reopenImg} onChange={e => setReopenImg(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-655 focus:outline-none" />
+            <textarea placeholder="Describe why this is still unresolved..." value={reopenNotes} onChange={e => setReopenNotes(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-700 focus:outline-none" rows={3} />
+            <input type="text" placeholder="Upload Reopen Photo URL (optional)" value={reopenImg} onChange={e => setReopenImg(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-700 focus:outline-none" />
             <div className="flex justify-end gap-2 text-xs font-bold">
               <button onClick={() => setReopenId(null)} className="px-3 py-1.5 border border-slate-200 rounded hover:bg-slate-50 text-slate-500 cursor-pointer">Cancel</button>
               <button onClick={() => {

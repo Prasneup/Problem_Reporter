@@ -141,7 +141,7 @@ export const OpenDataPortal: React.FC = () => {
                 className={`text-[10px] font-mono px-3 py-1.5 rounded transition-all cursor-pointer ${
                   activeEndpoint === endpoint
                     ? 'bg-blue-600 text-white font-bold'
-                    : 'bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                    : 'bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100'
                 }`}
               >
                 GET {endpoint}
@@ -152,11 +152,11 @@ export const OpenDataPortal: React.FC = () => {
           <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 font-mono text-xs overflow-y-auto max-h-[300px] relative min-h-[180px]">
             {loadingApi && (
               <div className="absolute inset-0 bg-slate-50/70 flex items-center justify-center text-slate-500 gap-2 font-bold">
-                <RefreshCw className="w-4 h-4 animate-spin text-blue-650" />
+                <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
                 <span>Fetching data...</span>
               </div>
             )}
-            <pre className="text-blue-650 whitespace-pre-wrap font-bold">
+            <pre className="text-blue-600 whitespace-pre-wrap font-bold">
               {apiResponse || '// Select an endpoint above and click or wait for response'}
             </pre>
           </div>

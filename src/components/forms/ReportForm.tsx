@@ -284,7 +284,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
               </label>
 
               <label className="flex-1 flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 border-dashed rounded-xl p-3 text-xs text-slate-500 hover:text-slate-800 cursor-pointer hover:border-blue-500/50 transition-colors font-bold">
-                <Video className="w-4 h-4 text-blue-655" />
+                <Video className="w-4 h-4 text-blue-600" />
                 <span>{videoUrl ? 'Video Uploaded' : 'Upload Video (Max 60s)'}</span>
                 <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
               </label>
@@ -313,7 +313,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             {uploadedImages.length > 0 && (
               <div className="flex gap-2 flex-wrap bg-slate-50 p-2 rounded-xl border border-slate-200/50">
                 {uploadedImages.map((img, idx) => (
-                  <div key={idx} className="relative w-12 h-12 rounded border border-slate-250 overflow-hidden group">
+                  <div key={idx} className="relative w-12 h-12 rounded border border-slate-200 overflow-hidden group">
                     <img src={img} alt="preview" className="w-full h-full object-cover" />
                     <button type="button" onClick={() => removeImage(idx)} className="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <Trash className="w-3.5 h-3.5" />
@@ -324,7 +324,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             )}
 
             {videoError && (
-              <div className="text-[10px] font-bold text-red-650 bg-red-50 border border-red-150 px-3 py-1.5 rounded-lg">
+              <div className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-150 px-3 py-1.5 rounded-lg">
                 ⚠️ {videoError}
               </div>
             )}
@@ -393,7 +393,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             </div>
           )}
           {coords && (
-            <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-xs space-y-1.5 font-mono text-slate-650 font-bold">
+            <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-xs space-y-1.5 font-mono text-slate-600 font-bold">
               <div className="flex justify-between border-b border-slate-100 pb-1 mb-1">
                 <span>📍 Lat/Lng: {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}</span>
                 <span className="text-slate-400">Accuracy: ±{gpsAccuracy ? gpsAccuracy.toFixed(1) : '2.0'}m</span>
