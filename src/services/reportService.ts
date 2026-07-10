@@ -2,6 +2,12 @@ import { supabase } from '../lib/supabase';
 import type { Report, Comment, WardBudget, ReportImage, ReportCategory, PriorityLevel, ReportStatus, UserRole, Notification, ReportVideo } from '../types';
 import { authService } from './authService';
 
+const sanitizeUUID = (id: string | null | undefined): string | null => {
+  if (!id) return null;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id) ? id : null;
+};
+
 interface DbReportImageRow {
   id: string;
   report_id: string;
@@ -357,9 +363,9 @@ export const reportService = {
   },
 
   async addComment(reportId: string, userId: string, content: string): Promise<Comment> {
-    const { data, error } = await supabase
-      .from('comments')
-      .insert({ report_id: reportId, user_id: userId, content })
+     const { data, error } = await supabase
+       .from('comments')
+       .insert({ report_id: reportId, user_id: sanitizeUUID(userId), content })
       .select('*, profiles(*)')
       .single();
 
@@ -399,7 +405,7 @@ export const reportService = {
     if (notes && verifierId) {
       await supabase.from('verification_logs').insert({
         report_id: reportId,
-        verifier_id: verifierId,
+        verifier_id: sanitizeUUID(verifierId),
         verification_type: 'ward_officer',
         status_change: status,
         notes
