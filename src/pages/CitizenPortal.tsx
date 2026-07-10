@@ -303,7 +303,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                 <th className="py-3 px-3">Title</th>
                 <th className="py-3 px-3">Category</th>
                 <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-3">Budget (Est/Spent)</th>
                 <th className="py-3 px-3">Date Submitted</th>
                 <th className="py-3 px-3 text-right">Actions</th>
               </tr>
@@ -311,7 +310,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
             <tbody>
               {citizenReports.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-slate-400 font-bold">You haven't submitted any reports yet.</td>
+                  <td colSpan={5} className="py-6 text-center text-slate-400 font-bold">You haven't submitted any reports yet.</td>
                 </tr>
               ) : (
                 citizenReports.map(r => (
@@ -323,7 +322,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                         {t(r.status)}
                       </span>
                     </td>
-                    <td className="py-3 px-3 font-mono text-slate-700">रू {r.budgetEstimated} / {r.budgetSpent}</td>
                     <td className="py-3 px-3">{formatNepalTime(r.createdAt).split(',')[0]}</td>
                     <td className="py-3 px-3 text-right">
                       {r.status === 'Resolved' && (
