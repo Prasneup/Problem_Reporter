@@ -74,7 +74,7 @@ function App() {
   }, [loadInitialData]);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/Problem_Reporter">
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
