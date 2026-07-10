@@ -4,6 +4,7 @@ import { useCivicStore } from '../stores/civicStore';
 import { LeafletMap } from '../components/maps/LeafletMap';
 import { ReportForm } from '../components/forms/ReportForm';
 import { reportService } from '../services/reportService';
+import { supabase } from '../lib/supabase';
 import { formatNepalTime } from '../utils/civicUtils';
 import { useTranslation } from '../hooks/useTranslation';
 import {
@@ -1381,12 +1382,33 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
     const handleFormSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
-        await reportService.createDbNotification({
-          userId: 'p-admin', // Targets the municipality Admin
-          title: 'New Support Desk Inquiry',
-          message: `From ${currentUser.name} (${subEmail}): "${subTitle}" - Message: ${subMsg}`,
-          type: 'info'
-        });
+        // Query the database to find the actual Admin's UUID
+        const { data: admins, error: adminErr } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('role', 'Admin')
+          .limit(1);
+        
+        if (adminErr) throw adminErr;
+        
+        const adminId = admins && admins.length > 0 ? admins[0].id : null;
+        
+        if (adminId) {
+          await reportService.createDbNotification({
+            userId: adminId,
+            title: 'New Support Desk Inquiry',
+            message: `From ${currentUser.name} (${subEmail}): "${subTitle}" - Message: ${subMsg}`,
+            type: 'info'
+          });
+        } else {
+          // If no admin profile is registered yet, fall back to null (allowed by DB schema)
+          await reportService.createDbNotification({
+            userId: null as any,
+            title: 'New Support Desk Inquiry',
+            message: `From ${currentUser.name} (${subEmail}): "${subTitle}" - Message: ${subMsg}`,
+            type: 'info'
+          });
+        }
       } catch (err) {
         console.error('Failed to notify Admin of support desk inquiry:', err);
       }
