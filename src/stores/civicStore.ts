@@ -97,7 +97,19 @@ export const useCivicStore = create<CivicState>()(
           const budgets = await reportService.fetchBudgets();
           const comments = await reportService.fetchComments();
           if (reports && reports.length > 0) {
-            set({ reports });
+            const currentReports = get().reports;
+            const merged = reports.map(fetched => {
+              const existing = currentReports.find(r => r.id === fetched.id);
+              if (existing) {
+                return {
+                  ...fetched,
+                  images: (fetched.images && fetched.images.length > 0) ? fetched.images : (existing.images || []),
+                  videos: (fetched.videos && fetched.videos.length > 0) ? fetched.videos : (existing.videos || [])
+                };
+              }
+              return fetched;
+            });
+            set({ reports: merged });
           }
           if (budgets && budgets.length > 0) {
             set({ budgets });
