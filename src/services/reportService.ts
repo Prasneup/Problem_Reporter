@@ -113,6 +113,7 @@ export const reportService = {
     const { data, error } = await supabase
       .from('reports')
       .select('*, report_images(*), report_videos(*)')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -459,6 +460,92 @@ export const reportService = {
         spent: Number(b.spent)
       };
     });
+  },
+
+  async editReport(
+    reportId: string,
+    updates: {
+      title: string;
+      description: string;
+      category: string;
+      priority: string;
+      latitude: number;
+      longitude: number;
+      address: string;
+      imageUrls?: string[];
+      videoUrl?: string;
+    }
+  ): Promise<void> {
+    await authService.ensureMappings();
+    const dbMuniId = authService.getDbMuniId('ghorahi');
+    const { detectMunicipalityAndWard } = await import('../utils/civicUtils');
+    const geo = detectMunicipalityAndWard(updates.latitude, updates.longitude);
+    const resolvedMuniId = authService.getDbMuniId(geo.municipalityId) || dbMuniId;
+    const resolvedWardId = resolvedMuniId ? authService.getDbWardId(resolvedMuniId, geo.wardId) : null;
+
+    const reportRow = {
+      title: updates.title,
+      description: updates.description,
+      category: mapCategoryToDb(updates.category),
+      priority: updates.priority,
+      latitude: updates.latitude,
+      longitude: updates.longitude,
+      address: updates.address,
+      municipality_id: resolvedMuniId || null,
+      ward_id: resolvedWardId || null,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase
+      .from('reports')
+      .update(reportRow)
+      .eq('id', reportId);
+
+    if (error) throw error;
+
+    if (updates.imageUrls) {
+      const { error: delErr } = await supabase.from('report_images').delete().eq('report_id', reportId);
+      if (delErr) console.warn('Error deleting old images:', delErr);
+      
+      for (const url of updates.imageUrls) {
+        const { error: insErr } = await supabase.from('report_images').insert({
+          report_id: reportId,
+          url: url,
+          image_type: 'before',
+          ai_analysis: {
+            category: mapCategoryToDb(updates.category),
+            confidence: 0.95,
+            qualityScore: 0.88,
+            issuesDetected: [updates.category.toLowerCase().replace(' ', '_')],
+            isFake: false,
+            isBlurry: false
+          }
+        });
+        if (insErr) console.error('Error inserting updated image:', insErr);
+      }
+    }
+
+    if (updates.videoUrl !== undefined) {
+      const { error: delVideoErr } = await supabase.from('report_videos').delete().eq('report_id', reportId);
+      if (delVideoErr) console.warn('Error deleting old videos:', delVideoErr);
+      
+      if (updates.videoUrl) {
+        const { error: insVideoErr } = await supabase.from('report_videos').insert({
+          report_id: reportId,
+          url: updates.videoUrl
+        });
+        if (insVideoErr) console.error('Error inserting updated video:', insVideoErr);
+      }
+    }
+  },
+
+  async softDeleteReport(reportId: string): Promise<void> {
+    const { error } = await supabase
+      .from('reports')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', reportId);
+
+    if (error) throw error;
   }
 };
 

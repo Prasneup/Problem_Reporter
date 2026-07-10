@@ -8,7 +8,9 @@ import { useTranslation } from '../hooks/useTranslation';
 import {
   AlertTriangle, Sun, Clock, Users, Phone, Map, FileText, 
   MessageCircle, Info, CheckCircle, RefreshCw, EyeOff, Award, Globe, 
-  MessageSquare, Shield, ArrowRight, ThumbsUp, Send, X, MapPin, Play
+  MessageSquare, Shield, ArrowRight, ThumbsUp, Send, X, MapPin, Play,
+  Eye, Pencil, Trash2, Image, FileDown, Star, Search, 
+  ArrowUpDown, Plus, AlertCircle
 } from 'lucide-react';
 import { MediaLightbox } from '../components/common/MediaLightbox';
 import ghorahiBanner from '../assets/ghorahi_banner.jpg';
@@ -166,7 +168,7 @@ const ModalMap: React.FC<{ latitude: number; longitude: number }> = ({ latitude,
 
 export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCurrentTab }) => {
   const { t, language } = useTranslation();
-  const { reports, currentUser, reopenReport, supportReport, addComment, comments, userLikes } = useCivicStore();
+  const { reports, currentUser, reopenReport, supportReport, addComment, comments, userLikes, editReport, deleteReport } = useCivicStore();
   const [selectedReportId] = useState<string | undefined>(undefined);
 
   const [reopenId, setReopenId] = useState<string | null>(null);
@@ -176,6 +178,32 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
   // Refactored State Pattern: Explicit Selected Complaint Id tracking
   const [activeComplaintId, setActiveComplaintId] = useState<string | null>(null);
   const [newCommentText, setNewCommentText] = useState('');
+
+  // Search, Filters & Sorting in My Reports
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterWard, setFilterWard] = useState('all');
+  const [filterPriority, setFilterPriority] = useState('all');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+  
+  const [sortField, setSortField] = useState<'createdAt' | 'status' | 'category' | 'priority'>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Modals for actions
+  const [viewDetailReport, setViewDetailReport] = useState<any | null>(null);
+  const [editReportData, setEditReportData] = useState<any | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [mapLocationReport, setMapLocationReport] = useState<any | null>(null);
+  const [ratingReport, setRatingReport] = useState<any | null>(null);
+  
+  // Rating states
+  const [ratingStars, setRatingStars] = useState(5);
+  const [ratingFeedback, setRatingFeedback] = useState('');
+
+  // Tabs for the detail modal
+  const [detailModalTab, setDetailModalTab] = useState<'overview' | 'timeline' | 'discussion'>('overview');
 
   // Lightbox Media Viewer State
   const [lightboxData, setLightboxData] = useState<{ mediaList: { type: 'image' | 'video'; url: string; title: string }[]; initialIndex: number } | null>(null);
@@ -196,6 +224,217 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
       setLightboxData({ mediaList: list, initialIndex });
     }
   };
+
+  const getComplaintId = (id: string, dateStr: string) => {
+    const year = new Date(dateStr).getFullYear() || 2026;
+    const shortId = id.substring(0, 6).toUpperCase();
+    return `GSC-${year}-${shortId}`;
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case 'Emergency': return <span className="bg-red-100 text-red-750 border border-red-200 px-2 py-0.5 rounded text-[9px] font-extrabold flex items-center gap-1 w-max">🚨 Emergency</span>;
+      case 'Critical': return <span className="bg-red-50 text-red-650 border border-red-100 px-2 py-0.5 rounded text-[9px] font-extrabold flex items-center gap-1 w-max">🔴 Critical</span>;
+      case 'High': return <span className="bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded text-[9px] font-extrabold flex items-center gap-1 w-max">🟠 High</span>;
+      case 'Medium': return <span className="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded text-[9px] font-extrabold flex items-center gap-1 w-max">🟡 Medium</span>;
+      case 'Low':
+      default: return <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-0.5 rounded text-[9px] font-extrabold flex items-center gap-1 w-max">🟢 Low</span>;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'Submitted': return <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">Submitted</span>;
+      case 'Under_Review': return <span className="bg-blue-50 text-blue-650 border border-blue-155 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">Under Review</span>;
+      case 'Assigned': return <span className="bg-purple-50 text-purple-600 border border-purple-100 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">Assigned</span>;
+      case 'In_Progress': return <span className="bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">In Progress</span>;
+      case 'Resolved': return <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">Resolved</span>;
+      case 'Closed': return <span className="bg-green-700 text-white border border-green-800 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">Closed</span>;
+      default: return <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">{status}</span>;
+    }
+  };
+
+  const getTimelineSteps = (status: string) => {
+    const steps = [
+      { key: 'Submitted', label: 'Submitted' },
+      { key: 'Under_Review', label: 'Under Review' },
+      { key: 'Assigned', label: 'Assigned' },
+      { key: 'In_Progress', label: 'In Progress' },
+      { key: 'Resolved', label: 'Resolved' },
+      { key: 'Closed', label: 'Closed' }
+    ];
+    
+    const currentIndex = steps.findIndex(s => s.key === status);
+    
+    return (
+      <div className="flex items-center justify-between w-full mt-4 bg-slate-50 p-4 rounded-xl border border-slate-200/50">
+        {steps.map((step, idx) => {
+          const isCompleted = idx <= currentIndex;
+          const isActive = idx === currentIndex;
+          return (
+            <React.Fragment key={step.key}>
+              <div className="flex flex-col items-center flex-1 relative">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border transition-colors ${
+                  isCompleted 
+                    ? 'bg-blue-600 border-blue-600 text-white' 
+                    : 'bg-white border-slate-300 text-slate-400'
+                } ${isActive ? 'ring-4 ring-blue-100' : ''}`}>
+                  {isCompleted ? '✓' : idx + 1}
+                </div>
+                <span className={`text-[9px] mt-1.5 font-extrabold ${isActive ? 'text-blue-600' : 'text-slate-500'}`}>
+                  {step.label}
+                </span>
+              </div>
+              {idx < steps.length - 1 && (
+                <div className={`h-0.5 flex-1 transition-colors ${idx < currentIndex ? 'bg-blue-600' : 'bg-slate-200'}`} />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+  };
+
+  const renderSortHeader = (label: string, field: typeof sortField) => {
+    const isCurrent = sortField === field;
+    return (
+      <th 
+        onClick={() => handleSort(field)}
+        className="py-3 px-3 cursor-pointer hover:bg-slate-100/80 transition-colors select-none group text-left font-semibold text-slate-500"
+      >
+        <div className="flex items-center gap-1">
+          <span>{label}</span>
+          <ArrowUpDown className={`w-3.5 h-3.5 transition-opacity ${isCurrent ? 'opacity-100 text-blue-600' : 'opacity-0 group-hover:opacity-60'}`} />
+        </div>
+      </th>
+    );
+  };
+
+  const handleDownloadPDF = (r: any) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert("Please allow popups to download/print the receipt.");
+      return;
+    }
+    const bsId = getComplaintId(r.id, r.createdAt);
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(window.location.origin + '/app/reports/' + r.id)}`;
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${bsId} - Municipal Complaint Receipt</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 40px; color: #333; }
+            .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #1e3a8a; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo-section { display: flex; align-items: center; gap: 15px; }
+            .logo-placeholder { width: 60px; height: 60px; background: #1e3a8a; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 24px; }
+            .title-section h1 { font-size: 20px; margin: 0; color: #1e3a8a; }
+            .title-section p { font-size: 11px; margin: 5px 0 0 0; color: #666; font-weight: bold; }
+            .complaint-id { text-align: right; }
+            .complaint-id h2 { font-size: 18px; margin: 0; color: #d97706; }
+            .complaint-id p { font-size: 11px; margin: 5px 0 0 0; color: #888; }
+            .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+            .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; }
+            .card h3 { font-size: 13px; margin: 0 0 10px 0; color: #1e3a8a; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px; text-transform: uppercase; }
+            .field { display: flex; margin-bottom: 8px; font-size: 12px; }
+            .field-label { font-weight: bold; width: 120px; color: #555; }
+            .field-value { flex: 1; }
+            .description { font-size: 12px; line-height: 1.5; background: #fff; padding: 10px; border-radius: 4px; border: 1px dashed #cbd5e1; }
+            .qr-section { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+            .qr-code { width: 100px; height: 100px; border: 1px solid #e2e8f0; padding: 5px; border-radius: 4px; }
+            .footer { border-top: 1px solid #e2e8f0; padding-top: 15px; margin-top: 40px; text-align: center; font-size: 11px; color: #888; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="logo-section">
+              <div class="logo-placeholder">🇳🇵</div>
+              <div class="title-section">
+                <h1>Ghorahi Sub-Metropolitan City Office</h1>
+                <p>Municipal Grievance Redressal & Smart City Portal</p>
+              </div>
+            </div>
+            <div class="complaint-id">
+              <h2>${bsId}</h2>
+              <p>Receipt Generated: ${new Date().toLocaleDateString()}</p>
+            </div>
+          </div>
+          
+          <div class="grid">
+            <div class="card">
+              <h3>Citizen & Grievance Info</h3>
+              <div class="field"><span class="field-label">Reported By:</span><span class="field-value">${currentUser.name}</span></div>
+              <div class="field"><span class="field-label">Email / Phone:</span><span class="field-value">${currentUser.email} / ${currentUser.phone || 'N/A'}</span></div>
+              <div class="field"><span class="field-label">Category:</span><span class="field-value">${r.category}</span></div>
+              <div class="field"><span class="field-label">Priority:</span><span class="field-value">${r.priority}</span></div>
+              <div class="field"><span class="field-label">Status:</span><span class="field-value">${r.status}</span></div>
+            </div>
+            
+            <div class="card qr-section">
+              <img class="qr-code" src="${qrCodeUrl}" alt="QR verification" />
+              <p style="font-size: 9px; color: #666; margin-top: 8px; font-weight: bold;">Scan to verify status online</p>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom: 30px;">
+            <h3>Complaint Details</h3>
+            <div class="field"><span class="field-label">Subject Title:</span><span class="field-value" style="font-weight: bold;">${r.title}</span></div>
+            <div class="field"><span class="field-label">Description:</span><span class="field-value" class="description">${r.description}</span></div>
+            <div class="field"><span class="field-label">Address:</span><span class="field-value">${r.address}</span></div>
+            <div class="field"><span class="field-label">Ward Number:</span><span class="field-value">Ward ${r.wardId}</span></div>
+            <div class="field"><span class="field-label">GPS Coords:</span><span class="field-value">${r.latitude.toFixed(6)}, ${r.longitude.toFixed(6)}</span></div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h3>Resolution & Budget</h3>
+              <div class="field"><span class="field-label">Assigned Dept:</span><span class="field-value">${r.assignedDepartment || 'Under Review / Unassigned'}</span></div>
+              <div class="field"><span class="field-label">Budget Allocated:</span><span class="field-value">Rs. ${r.budgetEstimated.toLocaleString()}</span></div>
+              <div class="field"><span class="field-label">Budget Spent:</span><span class="field-value">Rs. ${r.budgetSpent.toLocaleString()}</span></div>
+            </div>
+            
+            <div class="card">
+              <h3>Official Disclaimer</h3>
+              <p style="font-size: 11px; line-height: 1.4; color: #666; margin: 0;">
+                This receipt is dynamically generated by the Smart City Problem Reporter portal. The municipality executive office will verify and assign an engineer or department officer to address the reported problem within 3 business days. Please keep this receipt ID for reference when calling our hotline at 1111.
+              </p>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>Ghorahi Municipality Executive Office, Dang District, Nepal | Phone: 082-560111 | Email: info@ghorahimun.gov.np</p>
+            <p>© 2026 Ghorahi Sub-Metropolitan Portal. All Rights Reserved.</p>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const renderActionButton = (icon: React.ReactNode, tooltip: string, onClick: () => void, className = 'bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-650') => (
+    <button
+      onClick={onClick}
+      title={tooltip}
+      className={`p-1.5 rounded-lg transition-all duration-200 shadow-sm hover:-translate-y-0.5 cursor-pointer flex items-center justify-center ${className}`}
+    >
+      {icon}
+    </button>
+  );
 
   // Local dialog overlays
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
@@ -293,45 +532,231 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
   }
 
   if (activeView === 'my-reports') {
+
+    // Filter implementation
+    const filteredReports = citizenReports.filter(r => {
+      const matchesSearch = r.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getComplaintId(r.id, r.createdAt).toLowerCase().includes(searchTerm.toLowerCase());
+        
+      const matchesStatus = filterStatus === 'all' || r.status === filterStatus;
+      const matchesCategory = filterCategory === 'all' || r.category === filterCategory;
+      const matchesPriority = filterPriority === 'all' || r.priority === filterPriority;
+      const matchesWard = filterWard === 'all' || String(r.wardId) === filterWard;
+      
+      const reportDate = new Date(r.createdAt);
+      const matchesStartDate = !filterStartDate || reportDate >= new Date(filterStartDate);
+      const matchesEndDate = !filterEndDate || reportDate <= new Date(filterEndDate + 'T23:59:59');
+      
+      return matchesSearch && matchesStatus && matchesCategory && matchesPriority && matchesWard && matchesStartDate && matchesEndDate;
+    });
+
+    // Sort implementation
+    const sortedReports = [...filteredReports].sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'createdAt') {
+        comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      } else if (sortField === 'status') {
+        comparison = a.status.localeCompare(b.status);
+      } else if (sortField === 'category') {
+        comparison = a.category.localeCompare(b.category);
+      } else if (sortField === 'priority') {
+        const priorityOrder = { 'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4, 'Emergency': 5 };
+        comparison = (priorityOrder[a.priority as keyof typeof priorityOrder] || 0) - (priorityOrder[b.priority as keyof typeof priorityOrder] || 0);
+      }
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+
     return (
-      <div className="glass-panel p-6 font-sans">
-        <h2 className="text-base font-bold text-slate-800 mb-4">My Submitted Reports ({citizenReports.length})</h2>
-        <div className="overflow-x-auto">
+      <div className="glass-panel p-6 font-sans select-none">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+          <div>
+            <h2 className="text-base font-bold text-slate-800">My Submitted Reports ({citizenReports.length})</h2>
+            <p className="text-[10px] text-slate-450 mt-0.5 font-semibold">Track, update, print receipt, or rate the resolution of your submitted grievances.</p>
+          </div>
+          <button 
+            onClick={() => setCurrentTab('report-form')}
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 px-4 rounded-xl shadow transition-colors cursor-pointer self-start md:self-auto"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>File New Report</span>
+          </button>
+        </div>
+
+        {/* Dynamic Search & Filters Toolbar */}
+        <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 mb-5 text-xs font-bold text-slate-650 space-y-3">
+          <div className="flex flex-col md:flex-row gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3.5 w-4 h-4 text-slate-450" />
+              <input
+                type="text"
+                placeholder="Search by ID, keyword, title..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full bg-white border border-slate-250 rounded-lg pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 font-bold"
+              />
+            </div>
+            
+            {/* Status Filter */}
+            <div className="w-full md:w-44 flex flex-col gap-1">
+              <label className="text-[9px] uppercase tracking-wider text-slate-400">Status</label>
+              <select 
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                className="bg-white border border-slate-250 rounded-lg px-2.5 py-2.5 text-xs font-bold text-slate-650"
+              >
+                <option value="all">All Statuses</option>
+                <option value="Submitted">Submitted</option>
+                <option value="Under_Review">Under Review</option>
+                <option value="Assigned">Assigned</option>
+                <option value="In_Progress">In Progress</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </div>
+
+            {/* Category Filter */}
+            <div className="w-full md:w-48 flex flex-col gap-1">
+              <label className="text-[9px] uppercase tracking-wider text-slate-400">Category</label>
+              <select 
+                value={filterCategory}
+                onChange={e => setFilterCategory(e.target.value)}
+                className="bg-white border border-slate-250 rounded-lg px-2.5 py-2.5 text-xs font-bold text-slate-655"
+              >
+                <option value="all">All Categories</option>
+                <option value="Garbage / Waste Management">Garbage / Waste</option>
+                <option value="Road Damage">Road Damage</option>
+                <option value="Water Supply Problems">Water Supply</option>
+                <option value="Drainage / Sewer">Drainage / Sewer</option>
+                <option value="Street Light / Electricity">Street Light / Utility</option>
+                <option value="Public Infrastructure">Infrastructure</option>
+                <option value="Accident / Traffic Emergency">Accident / Traffic</option>
+                <option value="Fire Emergency">Fire Emergency</option>
+                <option value="Public Safety / Crime">Public Safety / Crime</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-slate-200/50">
+            {/* Priority Filter */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase tracking-wider text-slate-400">Priority</label>
+              <select 
+                value={filterPriority}
+                onChange={e => setFilterPriority(e.target.value)}
+                className="bg-white border border-slate-250 rounded-lg px-2 py-2 text-xs font-bold text-slate-655"
+              >
+                <option value="all">All Priorities</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+                <option value="Emergency">Emergency</option>
+              </select>
+            </div>
+
+            {/* Ward Filter */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase tracking-wider text-slate-400">Ward Number</label>
+              <select 
+                value={filterWard}
+                onChange={e => setFilterWard(e.target.value)}
+                className="bg-white border border-slate-250 rounded-lg px-2 py-2 text-xs font-bold text-slate-655"
+              >
+                <option value="all">All Wards</option>
+                {Array.from({ length: 19 }, (_, i) => i + 1).map(w => (
+                  <option key={w} value={String(w)}>Ward {w}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date Range Start */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase tracking-wider text-slate-400">Start Date</label>
+              <input
+                type="date"
+                value={filterStartDate}
+                onChange={e => setFilterStartDate(e.target.value)}
+                className="bg-white border border-slate-250 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600"
+              />
+            </div>
+
+            {/* Date Range End */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] uppercase tracking-wider text-slate-400">End Date</label>
+              <input
+                type="date"
+                value={filterEndDate}
+                onChange={e => setFilterEndDate(e.target.value)}
+                className="bg-white border border-slate-250 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Reports Grid Table */}
+        <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm bg-white">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-slate-200 text-slate-500 font-semibold bg-slate-50/50">
-                <th className="py-3 px-3">Title</th>
-                <th className="py-3 px-3">Category</th>
-                <th className="py-3 px-3">Status</th>
+                <th className="py-3 px-3">Complaint ID</th>
+                {renderSortHeader('Title', 'createdAt')}
+                {renderSortHeader('Category', 'category')}
+                {renderSortHeader('Priority', 'priority')}
+                {renderSortHeader('Status', 'status')}
                 <th className="py-3 px-3">Date Submitted</th>
                 <th className="py-3 px-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {citizenReports.length === 0 ? (
+              {sortedReports.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-slate-400 font-bold">You haven't submitted any reports yet.</td>
+                  <td colSpan={7} className="py-10 text-center text-slate-400 font-bold">No complaints match your filters.</td>
                 </tr>
               ) : (
-                citizenReports.map(r => (
-                  <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50/50 text-slate-600 font-semibold">
-                    <td className="py-3 px-3 font-bold text-slate-850">{r.title}</td>
-                    <td className="py-3 px-3">{t(r.category)}</td>
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-slate-100 text-blue-600 border border-slate-200">
-                        {t(r.status)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3">{formatNepalTime(r.createdAt).split(',')[0]}</td>
+                sortedReports.map(r => (
+                  <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50/60 text-slate-650 transition-colors duration-150">
+                    <td className="py-3 px-3 font-mono font-bold text-slate-700 text-[11px]">{getComplaintId(r.id, r.createdAt)}</td>
+                    <td className="py-3 px-3 font-bold text-slate-850 truncate max-w-[150px]" title={r.title}>{r.title}</td>
+                    <td className="py-3 px-3 truncate max-w-[120px]">{t(r.category)}</td>
+                    <td className="py-3 px-3">{getPriorityBadge(r.priority)}</td>
+                    <td className="py-3 px-3">{getStatusBadge(r.status)}</td>
+                    <td className="py-3 px-3 font-semibold text-slate-500">{formatNepalTime(r.createdAt).split(',')[0]}</td>
+                    
+                    {/* Status Based Actions */}
                     <td className="py-3 px-3 text-right">
-                      {r.status === 'Resolved' && (
-                        <button
-                          onClick={() => setReopenId(r.id)}
-                          className="bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 px-2.5 py-1 rounded font-bold text-[10px] transition-colors cursor-pointer"
-                        >
-                          Reopen Issue
-                        </button>
-                      )}
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        {/* 1. View Details (Always) */}
+                        {renderActionButton(<Eye className="w-3.5 h-3.5" />, "View Details", () => {
+                          setViewDetailReport(r);
+                          setDetailModalTab('overview');
+                        })}
+
+                        {/* 2. Edit (Submitted only) */}
+                        {r.status === 'Submitted' && renderActionButton(<Pencil className="w-3.5 h-3.5 text-blue-600" />, "Edit Report", () => setEditReportData(r))}
+
+                        {/* 3. Delete (Submitted only) */}
+                        {r.status === 'Submitted' && renderActionButton(<Trash2 className="w-3.5 h-3.5 text-red-650" />, "Delete Report", () => setDeleteConfirmId(r.id), 'bg-red-50 hover:bg-red-100 border border-red-200')}
+
+                        {/* 4. GIS Location Map (Always) */}
+                        {renderActionButton(<MapPin className="w-3.5 h-3.5 text-emerald-600" />, "View Location", () => setMapLocationReport(r))}
+
+                        {/* 5. Uploaded Media Gallery (Always) */}
+                        {renderActionButton(<Image className="w-3.5 h-3.5 text-indigo-600" />, "View Photos & Videos", () => openLightboxForReport(r))}
+
+                        {/* 6. Download PDF (Always) */}
+                        {renderActionButton(<FileDown className="w-3.5 h-3.5 text-slate-600" />, "Download Receipt", () => handleDownloadPDF(r))}
+
+                        {/* 7. Reopen (Resolved only) */}
+                        {r.status === 'Resolved' && renderActionButton(<RefreshCw className="w-3.5 h-3.5 text-rose-600 animate-spin-hover" />, "Reopen Complaint", () => setReopenId(r.id), 'bg-rose-50 hover:bg-rose-100 border border-rose-200')}
+
+                        {/* 8. Rate Service (Closed only) */}
+                        {r.status === 'Closed' && renderActionButton(<Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />, "Rate Service", () => {
+                          setRatingReport(r);
+                          setRatingStars(5);
+                        }, 'bg-amber-50 hover:bg-amber-100 border border-amber-200')}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -339,20 +764,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
             </tbody>
           </table>
         </div>
-
-        {reopenId && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 w-full max-w-sm space-y-4 shadow-xl font-bold">
-              <h3 className="text-xs font-bold text-slate-800">Reopen Resolved Complaint</h3>
-              <textarea placeholder="Describe why this is still unresolved..." value={reopenNotes} onChange={e => setReopenNotes(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-600 focus:outline-none" rows={3} />
-              <input type="text" placeholder="Upload Reopen Photo URL" value={reopenImg} onChange={e => setReopenImg(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-600 focus:outline-none" />
-              <div className="flex justify-end gap-2 text-xs font-bold">
-                <button onClick={() => setReopenId(null)} className="px-3 py-1.5 border border-slate-200 rounded hover:bg-slate-50 text-slate-500">Cancel</button>
-                <button onClick={() => handleReopen(reopenId)} className="px-3 py-1.5 bg-blue-600 rounded hover:bg-blue-700 text-white">Reopen</button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
@@ -914,7 +1325,387 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
               </form>
 
             </div>
+          </div>
+        </div>
+      )}
 
+      {/* 1. View Details Modal */}
+      {viewDetailReport && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col font-sans text-xs">
+            <div className="bg-blue-800 text-white p-5 flex items-center justify-between flex-shrink-0">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-blue-200">Complaint Details</span>
+                <h2 className="text-sm font-bold mt-0.5">{`GSC-${new Date(viewDetailReport.createdAt).getFullYear() || 2026}-${viewDetailReport.id.substring(0, 6).toUpperCase()}`}</h2>
+              </div>
+              <button onClick={() => setViewDetailReport(null)} className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex border-b border-slate-200 text-xs font-bold text-slate-500 bg-slate-50 flex-shrink-0">
+              <button onClick={() => setDetailModalTab('overview')} className={`px-5 py-3 border-b-2 transition-colors cursor-pointer ${detailModalTab === 'overview' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent hover:text-slate-800'}`}>Overview</button>
+              <button onClick={() => setDetailModalTab('timeline')} className={`px-5 py-3 border-b-2 transition-colors cursor-pointer ${detailModalTab === 'timeline' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent hover:text-slate-800'}`}>Activity Timeline</button>
+              <button onClick={() => setDetailModalTab('discussion')} className={`px-5 py-3 border-b-2 transition-colors cursor-pointer ${detailModalTab === 'discussion' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent hover:text-slate-800'}`}>Discussion & Official Responses ({comments.filter(c => c.reportId === viewDetailReport.id).length})</button>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1 space-y-4 text-xs select-none">
+              {detailModalTab === 'overview' && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Subject</h3>
+                    <p className="text-xs font-bold text-slate-800 mt-0.5">{viewDetailReport.title}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Description</h3>
+                    <p className="text-xs text-slate-600 mt-0.5 whitespace-pre-wrap leading-relaxed font-semibold">{viewDetailReport.description}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Category</h3>
+                      <div className="mt-1 font-bold text-slate-700">{viewDetailReport.category}</div>
+                    </div>
+                    <div>
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Priority</h3>
+                      <div className="mt-1">
+                        {(() => {
+                          switch (viewDetailReport.priority) {
+                            case 'Emergency': return <span className="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[9px] font-extrabold">🚨 Emergency</span>;
+                            case 'Critical': return <span className="bg-red-50 text-red-650 border border-red-100 px-2 py-0.5 rounded text-[9px] font-extrabold">🔴 Critical</span>;
+                            case 'High': return <span className="bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded text-[9px] font-extrabold">🟠 High</span>;
+                            case 'Medium': return <span className="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded text-[9px] font-extrabold">🟡 Medium</span>;
+                            case 'Low':
+                            default: return <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-0.5 rounded text-[9px] font-extrabold">🟢 Low</span>;
+                          }
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</h3>
+                      <div className="mt-1 font-extrabold text-blue-600 uppercase">{viewDetailReport.status}</div>
+                    </div>
+                    <div>
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date Submitted</h3>
+                      <p className="text-xs text-slate-650 mt-1 font-bold">{formatNepalTime(viewDetailReport.createdAt)}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ward / Location</h3>
+                      <p className="text-xs text-slate-800 mt-1 font-bold">Ward {viewDetailReport.wardId}</p>
+                      <p className="text-[10px] text-slate-500 font-bold mt-0.5">{viewDetailReport.address}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Coordinates</h3>
+                      <p className="text-xs text-slate-850 mt-1 font-mono font-bold">{viewDetailReport.latitude.toFixed(6)}, {viewDetailReport.longitude.toFixed(6)}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Assigned Department</h3>
+                      <p className="text-xs text-slate-800 mt-1 font-bold">{viewDetailReport.assignedDepartment || 'Under Review'}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Assigned Officer</h3>
+                      <p className="text-xs text-slate-850 mt-1 font-bold">{viewDetailReport.assignedOfficer || 'Not yet assigned'}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estimated Budget</h3>
+                      <p className="text-xs text-slate-850 mt-1 font-bold font-mono">Rs. {viewDetailReport.budgetEstimated?.toLocaleString() || '0'}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Amount Spent</h3>
+                      <p className="text-xs text-slate-850 mt-1 font-bold font-mono">Rs. {viewDetailReport.budgetSpent?.toLocaleString() || '0'}</p>
+                    </div>
+                  </div>
+
+                  {/* Uploaded Media Previews */}
+                  {(viewDetailReport.images?.length > 0 || viewDetailReport.videos?.length > 0) && (
+                    <div>
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Uploaded Media</h3>
+                      <div className="flex gap-2 flex-wrap">
+                        {viewDetailReport.videos?.map((v: any, idx: number) => (
+                          <div key={idx} onClick={() => openLightboxForReport(viewDetailReport, idx)} className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 cursor-pointer hover:opacity-85">
+                            <video src={v.url} className="w-full h-full object-cover" muted />
+                            <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
+                              <Play className="w-5 h-5 text-white" />
+                            </div>
+                          </div>
+                        ))}
+                        {viewDetailReport.images?.map((img: any, idx: number) => (
+                          <div key={idx} onClick={() => openLightboxForReport(viewDetailReport, (viewDetailReport.videos?.length || 0) + idx)} className="w-16 h-16 rounded-lg overflow-hidden border border-slate-200 cursor-pointer hover:opacity-85">
+                            <img src={img.url} alt="detail-upload" className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {detailModalTab === 'timeline' && (
+                <div className="space-y-4 py-2">
+                  <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Resolution Milestone Journey</h3>
+                  {getTimelineSteps(viewDetailReport.status)}
+                </div>
+              )}
+
+              {detailModalTab === 'discussion' && (
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Municipality & Citizen Discussion</h3>
+                  <div className="space-y-3 max-h-[30vh] overflow-y-auto pr-1 bg-slate-50 p-3 rounded-xl border border-slate-200/50">
+                    {comments.filter(c => c.reportId === viewDetailReport.id).length === 0 ? (
+                      <div className="text-center py-6 text-slate-450 font-bold">No updates or comments yet.</div>
+                    ) : (
+                      comments.filter(c => c.reportId === viewDetailReport.id).map(c => (
+                        <div key={c.id} className={`p-2.5 rounded-lg border text-[11px] ${c.isOfficialUpdate ? 'bg-amber-50/70 border-amber-100' : 'bg-white border-slate-200'}`}>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="font-bold text-slate-800 flex items-center gap-1">
+                              {c.userName} 
+                              {c.isOfficialUpdate && <span className="bg-amber-600 text-white text-[8px] px-1 rounded uppercase font-extrabold">Official</span>}
+                            </span>
+                            <span className="text-[9px] text-slate-450">{formatNepalTime(c.createdAt)}</span>
+                          </div>
+                          <p className="text-slate-655 font-semibold whitespace-pre-wrap">{c.content}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Post a Comment Form */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Post a query or feedback comment..."
+                      value={newCommentText}
+                      onChange={e => setNewCommentText(e.target.value)}
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:bg-white focus:border-blue-500 focus:outline-none font-bold"
+                    />
+                    <button
+                      onClick={async () => {
+                        if (!newCommentText.trim()) return;
+                        await addComment(viewDetailReport.id, newCommentText);
+                        setNewCommentText('');
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold hover:shadow cursor-pointer flex items-center justify-center"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-2 text-xs font-bold flex-shrink-0">
+              <button onClick={() => setViewDetailReport(null)} className="px-4 py-2 border border-slate-200 hover:bg-slate-100 rounded-lg text-slate-600 cursor-pointer">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Edit Report Modal */}
+      {editReportData && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden font-sans">
+            <div className="bg-blue-800 text-white p-4 flex items-center justify-between">
+              <h2 className="text-xs font-bold uppercase tracking-wider">Edit Complaint Details</h2>
+              <button onClick={() => setEditReportData(null)} className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const form = e.currentTarget;
+                const updates = {
+                  title: (form.elements.namedItem('title') as HTMLInputElement).value,
+                  description: (form.elements.namedItem('description') as HTMLTextAreaElement).value,
+                  category: (form.elements.namedItem('category') as HTMLSelectElement).value,
+                  priority: (form.elements.namedItem('priority') as HTMLSelectElement).value,
+                  latitude: Number((form.elements.namedItem('latitude') as HTMLInputElement).value),
+                  longitude: Number((form.elements.namedItem('longitude') as HTMLInputElement).value),
+                  address: (form.elements.namedItem('address') as HTMLInputElement).value,
+                };
+                await editReport(editReportData.id, updates);
+                setEditReportData(null);
+              }}
+              className="p-5 space-y-3.5 text-xs text-slate-700 font-bold"
+            >
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-450 uppercase">Complaint Title</label>
+                <input name="title" defaultValue={editReportData.title} required className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:border-blue-500 focus:outline-none" />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-450 uppercase">Full Description</label>
+                <textarea name="description" defaultValue={editReportData.description} required rows={3} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:border-blue-500 focus:outline-none" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-450 uppercase">Category</label>
+                  <select name="category" defaultValue={editReportData.category} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:outline-none text-slate-700">
+                    {['Garbage / Waste Management', 'Road Damage', 'Water Supply Problems', 'Drainage / Sewer', 'Street Light / Electricity', 'Public Infrastructure', 'Accident / Traffic Emergency', 'Fire Emergency', 'Public Safety / Crime'].map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-450 uppercase">Priority</label>
+                  <select name="priority" defaultValue={editReportData.priority} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:outline-none text-slate-700">
+                    {['Low', 'Medium', 'High', 'Critical', 'Emergency'].map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-450 uppercase">Verified Address</label>
+                <input name="address" defaultValue={editReportData.address} required className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:border-blue-500 focus:outline-none" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-450 uppercase">Latitude</label>
+                  <input name="latitude" type="number" step="any" defaultValue={editReportData.latitude} required className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:border-blue-500 focus:outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-450 uppercase">Longitude</label>
+                  <input name="longitude" type="number" step="any" defaultValue={editReportData.longitude} required className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold focus:bg-white focus:border-blue-500 focus:outline-none" />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 text-xs font-bold">
+                <button type="button" onClick={() => setEditReportData(null)} className="px-4 py-2 border border-slate-200 hover:bg-slate-100 rounded-lg text-slate-500 cursor-pointer">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Delete Confirmation Dialog */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 w-full max-w-xs space-y-4 shadow-xl text-xs font-bold text-slate-700 font-sans">
+            <div className="flex items-center gap-2 text-red-650 text-sm">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <h3>Confirm Soft-Delete</h3>
+            </div>
+            <p className="text-slate-500">Are you sure you want to delete this report? This action cannot be undone.</p>
+            <div className="flex justify-end gap-2 pt-1 font-bold">
+              <button onClick={() => setDeleteConfirmId(null)} className="px-3 py-1.5 border border-slate-250 hover:bg-slate-50 text-slate-500 rounded cursor-pointer">Cancel</button>
+              <button
+                onClick={async () => {
+                  await deleteReport(deleteConfirmId);
+                  setDeleteConfirmId(null);
+                }}
+                className="px-3 py-1.5 bg-red-650 hover:bg-red-700 text-white rounded cursor-pointer"
+              >
+                Delete Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Map Location Modal */}
+      {mapLocationReport && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden font-sans">
+            <div className="bg-blue-800 text-white p-4 flex items-center justify-between">
+              <h2 className="text-xs font-bold uppercase tracking-wider">GIS Geo-Location Pin</h2>
+              <button onClick={() => setMapLocationReport(null)} className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="h-64 relative bg-slate-100">
+              <LeafletMap reports={[mapLocationReport]} activeReportId={mapLocationReport.id} />
+            </div>
+            <div className="p-4 bg-slate-50 text-xs border-t border-slate-200 space-y-1">
+              <div className="font-bold text-slate-800">{mapLocationReport.address}</div>
+              <div className="text-[10px] text-slate-500 font-mono font-bold">GPS: {mapLocationReport.latitude.toFixed(6)}, {mapLocationReport.longitude.toFixed(6)} | Ward: {mapLocationReport.wardId}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Star Rating Feedback Modal */}
+      {ratingReport && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 w-full max-w-sm space-y-4 shadow-xl font-sans text-xs font-bold text-slate-700">
+            <h3 className="text-sm font-bold text-slate-800">Rate Service Resolution</h3>
+            <p className="text-slate-550 font-semibold">How satisfied are you with Ghorahi's resolution of this complaint?</p>
+            
+            {/* Clickable star selection */}
+            <div className="flex gap-1.5 justify-center py-2">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRatingStars(star)}
+                  className="p-1 hover:scale-115 transition-transform cursor-pointer"
+                >
+                  <Star className={`w-7 h-7 ${star <= ratingStars ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} />
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] text-slate-455 uppercase">Feedback Remarks</label>
+              <textarea
+                placeholder="Optional feedback or remarks..."
+                value={ratingFeedback}
+                onChange={e => setRatingFeedback(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-655 focus:outline-none"
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-1 font-bold">
+              <button onClick={() => setRatingReport(null)} className="px-3 py-1.5 border border-slate-200 rounded hover:bg-slate-50 text-slate-500 cursor-pointer">Cancel</button>
+              <button
+                onClick={async () => {
+                  const feedbackString = `⭐ Service Rating: ${ratingStars}/5 Stars\nFeedback: ${ratingFeedback || 'Satisfactory work.'}`;
+                  await addComment(ratingReport.id, feedbackString);
+                  setRatingReport(null);
+                  setRatingFeedback('');
+                }}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded cursor-pointer"
+              >
+                Submit Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reopenId && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 w-full max-w-sm space-y-4 shadow-xl font-sans text-xs font-bold text-slate-700">
+            <h3 className="text-sm font-bold text-slate-800 font-sans">Reopen Resolved Complaint</h3>
+            <textarea placeholder="Describe why this is still unresolved..." value={reopenNotes} onChange={e => setReopenNotes(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-655 focus:outline-none" rows={3} />
+            <input type="text" placeholder="Upload Reopen Photo URL (optional)" value={reopenImg} onChange={e => setReopenImg(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs text-slate-655 focus:outline-none" />
+            <div className="flex justify-end gap-2 text-xs font-bold">
+              <button onClick={() => setReopenId(null)} className="px-3 py-1.5 border border-slate-200 rounded hover:bg-slate-50 text-slate-500 cursor-pointer">Cancel</button>
+              <button onClick={() => {
+                handleReopen(reopenId);
+                setReopenId(null);
+              }} className="px-3 py-1.5 bg-blue-600 rounded hover:bg-blue-700 text-white cursor-pointer">Reopen</button>
+            </div>
           </div>
         </div>
       )}

@@ -66,6 +66,7 @@ CREATE TABLE public.reports (
     budget_estimated NUMERIC(12, 2) DEFAULT 0.00,
     budget_spent NUMERIC(12, 2) DEFAULT 0.00,
     is_emergency BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );

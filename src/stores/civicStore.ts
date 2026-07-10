@@ -35,6 +35,8 @@ interface CivicState {
   reopenReport: (reportId: string, notes: string, imageUrl: string) => void;
   syncOfflineQueue: () => void;
   dismissNotification: (id: string) => void;
+  editReport: (reportId: string, updates: { title: string; description: string; category: string; priority: string; latitude: number; longitude: number; address: string; imageUrls?: string[]; videoUrl?: string }) => Promise<void>;
+  deleteReport: (reportId: string) => Promise<void>;
 }
 
 export const useCivicStore = create<CivicState>()(
@@ -723,6 +725,68 @@ export const useCivicStore = create<CivicState>()(
             await reportService.dismissDbNotification(id);
           } catch (err) {
             console.error('Error dismissing notification in DB:', err);
+          }
+        }
+      },
+
+      editReport: async (reportId, updates) => {
+        set((state) => ({
+          reports: state.reports.map((r) => {
+            if (r.id === reportId) {
+              const updatedImages = updates.imageUrls ? updates.imageUrls.map((url, idx) => ({
+                id: 'local-u-' + idx + '-' + Math.random().toString(36).substring(2, 6),
+                reportId,
+                url,
+                imageType: 'before' as const,
+                createdAt: new Date().toISOString()
+              })) : r.images;
+
+              const updatedVideos = updates.videoUrl !== undefined ? (updates.videoUrl ? [{
+                id: 'local-uv-' + Math.random().toString(36).substring(2, 6),
+                reportId,
+                url: updates.videoUrl,
+                createdAt: new Date().toISOString()
+              }] : []) : r.videos;
+
+              return {
+                ...r,
+                title: updates.title,
+                description: updates.description,
+                category: updates.category as any,
+                priority: updates.priority as any,
+                latitude: updates.latitude,
+                longitude: updates.longitude,
+                address: updates.address,
+                images: updatedImages,
+                videos: updatedVideos,
+                updatedAt: new Date().toISOString()
+              };
+            }
+            return r;
+          })
+        }));
+
+        if (get().isOnline) {
+          try {
+            const { default: reportService } = await import('../services/reportService');
+            await reportService.editReport(reportId, updates);
+          } catch (err) {
+            console.error('Error editing report in Supabase:', err);
+          }
+        }
+      },
+
+      deleteReport: async (reportId) => {
+        set((state) => ({
+          reports: state.reports.filter((r) => r.id !== reportId)
+        }));
+
+        if (get().isOnline) {
+          try {
+            const { default: reportService } = await import('../services/reportService');
+            await reportService.softDeleteReport(reportId);
+          } catch (err) {
+            console.error('Error soft-deleting report in Supabase:', err);
           }
         }
       }

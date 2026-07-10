@@ -52,3 +52,6 @@ CREATE POLICY "Authenticated users can insert notifications" ON public.notificat
 DROP POLICY IF EXISTS "Authenticated users can update their own notifications" ON public.notifications;
 CREATE POLICY "Authenticated users can update their own notifications" ON public.notifications FOR UPDATE USING (auth.role() = 'authenticated' AND auth.uid() = user_id);
 
+-- 7. Add deleted_at column to reports table for soft delete support
+ALTER TABLE public.reports ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
+
