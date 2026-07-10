@@ -35,7 +35,7 @@ serve(async (req) => {
           "Authorization": `Bearer ${RESEND_API_KEY}`
         },
         body: JSON.stringify({
-          from: "Ghorahi Portal Support <support@yourdomain.com>", // Replace with verified domain
+          from: "Ghorahi Portal Support <onboarding@resend.dev>",
           to: ADMIN_EMAILS,
           subject: `[Support Ticket] Ghorahi Smart City Portal Inquiry`,
           html: emailBody
