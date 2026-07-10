@@ -27,23 +27,31 @@ serve(async (req) => {
         </div>
       `
 
-      // Dispatch email using Resend API
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${RESEND_API_KEY}`
-        },
-        body: JSON.stringify({
-          from: "Ghorahi Portal Support <onboarding@resend.dev>",
-          to: ADMIN_EMAILS,
-          subject: `[Support Ticket] Ghorahi Smart City Portal Inquiry`,
-          html: emailBody
-        })
-      })
+      // Send separate emails to each admin to handle Resend sandbox limitations gracefully
+      for (const email of ADMIN_EMAILS) {
+        try {
+          const response = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${RESEND_API_KEY}`
+            },
+            body: JSON.stringify({
+              from: "Ghorahi Portal Support <onboarding@resend.dev>",
+              to: [email],
+              subject: `[Support Ticket] Ghorahi Smart City Portal Inquiry`,
+              html: emailBody
+            })
+          });
 
-      if (!response.ok) {
-        throw new Error(`Resend API Error: ${await response.text()}`)
+          if (!response.ok) {
+            console.error(`Failed to send email to ${email}:`, await response.text());
+          } else {
+            console.log(`Successfully sent support email to ${email}`);
+          }
+        } catch (err) {
+          console.error(`Error sending email to ${email}:`, err);
+        }
       }
     }
 
