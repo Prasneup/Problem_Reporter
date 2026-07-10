@@ -11,6 +11,7 @@ interface LeafletMapProps {
   activeReportId?: string;
   showHeatmap?: boolean;
   showGisLayers?: boolean;
+  selectedWard?: string;
 }
 
 // Haversine distance formula to calculate exact distance in meters
@@ -43,6 +44,40 @@ const GHORAHI_BOUNDARY: L.LatLngExpression[] = [
   [28.06, 82.43]
 ];
 
+const WARD_CENTERS: Record<number, [number, number]> = {
+  1: [28.085, 82.445],
+  2: [28.092, 82.465],
+  3: [28.080, 82.495],
+  4: [28.068, 82.510],
+  5: [28.055, 82.520],
+  6: [28.042, 82.505],
+  7: [28.035, 82.485],
+  8: [28.045, 82.455],
+  9: [28.058, 82.440],
+  10: [28.065, 82.460],
+  11: [28.072, 82.475],
+  12: [28.060, 82.485],
+  13: [28.050, 82.495],
+  14: [28.075, 82.500],
+  15: [28.064, 82.480],
+  16: [28.090, 82.515],
+  17: [28.100, 82.480],
+  18: [28.110, 82.460],
+  19: [28.105, 82.440]
+};
+
+const getWardPolygon = (wardId: number): L.LatLngExpression[] => {
+  const center = WARD_CENTERS[wardId] || [28.064, 82.488];
+  const offsetLat = 0.015;
+  const offsetLng = 0.015;
+  return [
+    [center[0] + offsetLat, center[1] - offsetLng],
+    [center[0] + offsetLat, center[1] + offsetLng],
+    [center[0] - offsetLat, center[1] + offsetLng],
+    [center[0] - offsetLat, center[1] - offsetLng]
+  ];
+};
+
 export const LeafletMap: React.FC<LeafletMapProps> = ({
   reports,
   onSelectCoords,
@@ -50,6 +85,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   activeReportId,
   showHeatmap: initialShowHeatmap = false,
   showGisLayers = false,
+  selectedWard,
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
@@ -59,7 +95,6 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   const boundaryGroup = useRef<L.FeatureGroup | null>(null);
   const placementMarker = useRef<L.Marker | null>(null);
   const radiusCircle = useRef<L.Circle | null>(null);
-  const boundsFitted = useRef(false);
 
   // States
   const [localHeatmap, setLocalHeatmap] = useState(initialShowHeatmap);
@@ -88,17 +123,6 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     gisGroup.current = L.featureGroup().addTo(map);
     boundaryGroup.current = L.featureGroup().addTo(map);
 
-    // Render Municipal Boundary Overlay
-    const boundaryPoly = L.polygon(GHORAHI_BOUNDARY, {
-      color: '#3b82f6',
-      weight: 1.5,
-      opacity: 0.4,
-      fillColor: '#3b82f6',
-      fillOpacity: 0.02,
-      dashArray: '5, 8'
-    });
-    boundaryGroup.current.addLayer(boundaryPoly);
-
     // Support single click pin dropping
     map.on('click', (e: L.LeafletMouseEvent) => {
       if (onSelectCoords) {
@@ -112,16 +136,53 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     };
   }, [onSelectCoords]);
 
-  // Dynamically fit map bounds on initial load of active pins
+  // Update boundary and map view dynamically based on selectedWard
   useEffect(() => {
     const map = mapInstance.current;
-    if (!map || reports.length === 0 || boundsFitted.current) return;
+    if (!map || !boundaryGroup.current) return;
 
-    const latLngs = reports.map((r) => L.latLng(r.latitude, r.longitude));
-    const bounds = L.latLngBounds(latLngs);
-    map.fitBounds(bounds, { padding: [55, 55], maxZoom: 14 });
-    boundsFitted.current = true;
-  }, [reports]);
+    boundaryGroup.current.clearLayers();
+
+    if (selectedWard && selectedWard !== 'all') {
+      const wardId = Number(selectedWard);
+      if (!isNaN(wardId)) {
+        const polyCoords = getWardPolygon(wardId);
+        const wardPoly = L.polygon(polyCoords, {
+          color: '#10b981', // green boundary for selected ward
+          weight: 2,
+          opacity: 0.8,
+          fillColor: '#10b981',
+          fillOpacity: 0.04,
+          dashArray: '4, 6'
+        });
+        boundaryGroup.current.addLayer(wardPoly);
+
+        // Auto zoom/pan map to fit this ward's polygon boundary in view
+        const bounds = L.latLngBounds(polyCoords);
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+      }
+    } else {
+      // Draw full city boundary (Blue dashed)
+      const boundaryPoly = L.polygon(GHORAHI_BOUNDARY, {
+        color: '#3b82f6',
+        weight: 1.5,
+        opacity: 0.4,
+        fillColor: '#3b82f6',
+        fillOpacity: 0.02,
+        dashArray: '5, 8'
+      });
+      boundaryGroup.current.addLayer(boundaryPoly);
+
+      // Re-fit to reports or fallback to municipality center
+      if (reports.length > 0) {
+        const latLngs = reports.map((r) => L.latLng(r.latitude, r.longitude));
+        const bounds = L.latLngBounds(latLngs);
+        map.fitBounds(bounds, { padding: [55, 55], maxZoom: 14 });
+      } else {
+        map.setView([DANG_CENTER.lat, DANG_CENTER.lng], 13);
+      }
+    }
+  }, [selectedWard, reports]);
 
   // Handle Zoom operations via Custom Buttons
   const handleZoomIn = () => {

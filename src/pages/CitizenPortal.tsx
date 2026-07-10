@@ -10,10 +10,11 @@ import {
   MessageCircle, Info, CheckCircle, RefreshCw, EyeOff, Award, Globe, 
   MessageSquare, Shield, ArrowRight, ThumbsUp, Send, X, MapPin, Play,
   Eye, Pencil, Trash2, Image, FileDown, Star, Search, 
-  ArrowUpDown, Plus, AlertCircle
+  ArrowUpDown, Plus, AlertCircle, Bell, ClipboardList
 } from 'lucide-react';
 import { MediaLightbox } from '../components/common/MediaLightbox';
 import ghorahiBanner from '../assets/ghorahi_banner.jpg';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, AreaChart, Area, CartesianGrid } from 'recharts';
 
 
 interface CitizenPortalProps {
@@ -168,7 +169,7 @@ const ModalMap: React.FC<{ latitude: number; longitude: number }> = ({ latitude,
 
 export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCurrentTab }) => {
   const { t, language } = useTranslation();
-  const { reports, currentUser, reopenReport, supportReport, addComment, comments, userLikes, editReport, deleteReport } = useCivicStore();
+  const { reports, currentUser, reopenReport, supportReport, addComment, comments, userLikes, editReport, deleteReport, notifications, dismissNotification } = useCivicStore();
   const [selectedReportId] = useState<string | undefined>(undefined);
 
   const [reopenId, setReopenId] = useState<string | null>(null);
@@ -520,6 +521,989 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
     { name: 'Traffic Police Division', count: reports.filter(r => r.assignedDepartment === 'Traffic Police Division').length + 2 }
   ].sort((a, b) => b.count - a.count);
 
+  const ActiveReportsView = () => {
+    const [q, setQ] = useState('');
+    const [cat, setCat] = useState('all');
+    const [st, setSt] = useState('all');
+    const [wd, setWd] = useState('all');
+    const [srt, setSrt] = useState<'newest' | 'oldest' | 'upvoted'>('newest');
+
+    const activeList = reports.filter(r => 
+      ['Submitted', 'Under_Review', 'Assigned', 'In_Progress'].includes(r.status)
+    );
+
+    const filtered = activeList.filter(r => {
+      const matchesQ = r.title.toLowerCase().includes(q.toLowerCase()) || 
+                       r.description.toLowerCase().includes(q.toLowerCase()) ||
+                       getComplaintId(r.id, r.createdAt).toLowerCase().includes(q.toLowerCase());
+      const matchesCat = cat === 'all' || r.category === cat;
+      const matchesSt = st === 'all' || r.status === st;
+      const matchesWd = wd === 'all' || String(r.wardId) === wd;
+      return matchesQ && matchesCat && matchesSt && matchesWd;
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      if (srt === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (srt === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (srt === 'upvoted') return b.supportCount - a.supportCount;
+      return 0;
+    });
+
+    return (
+      <div className="glass-panel p-6 space-y-5 font-sans select-none">
+        <div>
+          <h2 className="text-base font-bold text-slate-800">Active Public Grievances ({activeList.length})</h2>
+          <p className="text-[10px] text-slate-500 mt-0.5 font-bold">Monitor unresolved issues submitted by citizens across Ghorahi Sub-Metropolitan wards.</p>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-3.5 bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 text-xs font-bold text-slate-600">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search by ID, keyword, title..." 
+              value={q} 
+              onChange={e => setQ(e.target.value)}
+              className="w-full bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-blue-500 font-bold" 
+            />
+          </div>
+
+          <select value={st} onChange={e => setSt(e.target.value)} className="bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-bold text-slate-600 focus:outline-none">
+            <option value="all">All Active Statuses</option>
+            <option value="Submitted">Submitted</option>
+            <option value="Under_Review">Under Review</option>
+            <option value="Assigned">Assigned</option>
+            <option value="In_Progress">In Progress</option>
+          </select>
+
+          <select value={cat} onChange={e => setCat(e.target.value)} className="bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-bold text-slate-600 focus:outline-none">
+            <option value="all">All Categories</option>
+            {['Garbage / Waste Management', 'Road Damage', 'Water Supply Problems', 'Drainage / Sewer', 'Street Light / Electricity', 'Public Infrastructure', 'Accident / Traffic Emergency', 'Fire Emergency', 'Public Safety / Crime'].map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
+          <select value={wd} onChange={e => setWd(e.target.value)} className="bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-bold text-slate-600 focus:outline-none">
+            <option value="all">All Wards</option>
+            {Array.from({ length: 19 }, (_, i) => String(i + 1)).map(w => (
+              <option key={w} value={w}>Ward {w}</option>
+            ))}
+          </select>
+
+          <select value={srt} onChange={e => setSrt(e.target.value as any)} className="bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-bold text-slate-600 focus:outline-none">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="upvoted">Most Supported</option>
+          </select>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-h-[70vh] overflow-y-auto pr-1">
+          {sorted.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-xs text-slate-400 font-bold bg-white border border-slate-200 rounded-2xl">
+              No matching unresolved grievances found.
+            </div>
+          ) : (
+            sorted.map((comp) => {
+              const isCrit = ['Critical', 'Emergency'].includes(comp.priority);
+              const statusColors = isCrit
+                ? 'bg-rose-50 text-rose-600 border-rose-100'
+                : comp.status === 'In_Progress' || comp.status === 'Assigned'
+                ? 'bg-amber-50 text-amber-600 border-amber-100'
+                : 'bg-blue-50 text-blue-600 border-blue-100';
+
+              const reportCommentsCount = comments.filter(c => c.reportId === comp.id).length;
+              const hasUpvoted = userLikes ? userLikes.includes(comp.id) : false;
+
+              return (
+                <div 
+                  key={comp.id} 
+                  onClick={() => setViewDetailReport(comp)}
+                  className="bg-white border border-slate-200 hover:border-blue-400 hover:shadow-md cursor-pointer hover:scale-[1.01] transition-all duration-200 rounded-2xl overflow-hidden flex flex-col sm:flex-row min-h-[170px]"
+                >
+                  <div className="w-full sm:w-44 h-36 sm:h-auto bg-slate-50 flex-shrink-0 relative overflow-hidden">
+                    <MediaPreview report={comp} onClickMedia={(idx) => openLightboxForReport(comp, idx)} />
+                    <span className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide pointer-events-none z-10">
+                      Ward {comp.wardId}
+                    </span>
+                  </div>
+
+                  <div className="p-4 flex-1 flex flex-col justify-between min-w-0 space-y-3">
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-[8.5px] font-extrabold uppercase tracking-wider text-blue-600">{t(comp.category)}</span>
+                        <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 border rounded-lg tracking-wider shrink-0 select-none ${statusColors}`}>
+                          {t(comp.status).replace('_', ' ')}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] font-mono font-bold text-slate-405">{getComplaintId(comp.id, comp.createdAt)}</span>
+                        {getPriorityBadge(comp.priority)}
+                      </div>
+                      <h4 className="text-xs font-extrabold text-slate-800 line-clamp-1">{comp.title}</h4>
+                      <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed font-bold">{comp.description}</p>
+                    </div>
+
+                    <div className="space-y-2 border-t border-slate-100 pt-2.5">
+                      <p className="text-[8.5px] font-extrabold text-slate-500 flex items-center gap-1 select-none">
+                        <Users className="w-3 h-3 text-slate-400" />
+                        <span>This issue has been flagged by {comp.duplicateCount || 0} citizens.</span>
+                      </p>
+
+                      <div className="flex justify-between items-center text-[9px] font-bold text-slate-400">
+                        <span>{formatBsDate(comp.createdAt)}</span>
+                        
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={(e) => handleLike(comp.id, e)}
+                            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-colors cursor-pointer ${
+                              hasUpvoted
+                                ? 'bg-blue-50 border-blue-200 text-blue-600 font-extrabold'
+                                : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                            }`}
+                          >
+                            <ThumbsUp className="w-3.5 h-3.5" />
+                            <span>{comp.supportCount}</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewDetailReport(comp);
+                            }}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border bg-white border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span>{reportCommentsCount}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const AlertsView = () => {
+    const userNotifs = notifications.filter((n: any) => n.userId === currentUser.id);
+
+    const handleMarkAllRead = () => {
+      userNotifs.filter((n: any) => !n.isRead).forEach((n: any) => dismissNotification(n.id));
+    };
+
+    const bgColorsMap: Record<string, string> = {
+      success: 'bg-emerald-50 border-emerald-100 text-emerald-800',
+      warning: 'bg-amber-50 border-amber-100 text-amber-800',
+      error: 'bg-red-50 border-red-100 text-red-800',
+      reward: 'bg-purple-50 border-purple-100 text-purple-800',
+      info: 'bg-blue-50 border-blue-100 text-blue-800',
+      system: 'bg-slate-50 border-slate-200 text-slate-800',
+      escalation: 'bg-orange-50/70 border-orange-100 text-orange-800'
+    };
+
+    const iconsMap: Record<string, React.ReactNode> = {
+      success: <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />,
+      warning: <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />,
+      error: <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />,
+      reward: <Award className="w-4 h-4 text-purple-600 shrink-0" />,
+      info: <Info className="w-4 h-4 text-blue-600 shrink-0" />,
+      system: <Bell className="w-4 h-4 text-slate-500 shrink-0" />,
+      escalation: <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0" />
+    };
+
+    return (
+      <div className="glass-panel p-6 space-y-5 font-sans select-none">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-slate-800">Alerts & Updates ({userNotifs.length})</h2>
+            <p className="text-[10px] text-slate-500 mt-0.5 font-bold">Important system warnings, official updates, comments, and trust rewards.</p>
+          </div>
+          {userNotifs.some((n: any) => !n.isRead) && (
+            <button 
+              onClick={handleMarkAllRead} 
+              className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-100 transition-colors cursor-pointer"
+            >
+              Mark All as Read
+            </button>
+          )}
+        </div>
+
+        <div className="space-y-3.5 max-h-[70vh] overflow-y-auto pr-1">
+          {userNotifs.length === 0 ? (
+            <div className="text-center py-16 text-xs text-slate-400 font-bold bg-white border border-slate-200 rounded-2xl space-y-2">
+              <Bell className="w-8 h-8 text-slate-300 mx-auto" />
+              <p>Your notification tray is empty.</p>
+            </div>
+          ) : (
+            userNotifs.map((n: any) => {
+              const bgColors = (bgColorsMap[n.type] || bgColorsMap.system);
+              const icon = (iconsMap[n.type] || iconsMap.system);
+
+              return (
+                <div 
+                  key={n.id}
+                  className={`border rounded-xl p-4 flex items-start gap-3.5 transition-all duration-155 relative ${bgColors} ${
+                    !n.isRead ? 'ring-1 ring-blue-400 font-bold' : 'opacity-75'
+                  }`}
+                >
+                  <div className="mt-0.5">{icon}</div>
+                  <div className="flex-1 min-w-0 pr-16">
+                    <h4 className="text-[11px] font-extrabold">{n.title}</h4>
+                    <p className="text-[10px] mt-1 font-semibold leading-relaxed text-slate-600">{n.message}</p>
+                    <span className="text-[9px] text-slate-400 font-bold block mt-2">{formatBsDate(n.createdAt)}</span>
+                  </div>
+
+                  {!n.isRead && (
+                    <button
+                      onClick={() => dismissNotification(n.id)}
+                      className="absolute right-4 top-4 text-[9px] bg-white hover:bg-slate-50 border border-slate-200 text-slate-500 font-bold px-2 py-1 rounded transition-colors cursor-pointer"
+                    >
+                      Dismiss
+                    </button>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const MapViewFull = () => {
+    const [cat, setCat] = useState('all');
+    const [st, setSt] = useState('all');
+    const [wd, setWd] = useState('all');
+    const [startD, setStartD] = useState('');
+    const [endD, setEndD] = useState('');
+    const [showHeat, setShowHeat] = useState(false);
+
+    useEffect(() => {
+      (window as any).viewReportDetails = (id: string) => {
+        const found = reports.find(r => r.id === id);
+        if (found) {
+          setViewDetailReport(found);
+        }
+      };
+      return () => {
+        delete (window as any).viewReportDetails;
+      };
+    }, []);
+
+    const filtered = reports.filter(r => {
+      const matchesCat = cat === 'all' || r.category === cat;
+      const matchesSt = st === 'all' || r.status === st;
+      const matchesWd = wd === 'all' || String(r.wardId) === wd;
+      
+      const rDate = new Date(r.createdAt);
+      const matchesStart = !startD || rDate >= new Date(startD);
+      const matchesEnd = !endD || rDate <= new Date(endD + 'T23:59:59');
+
+      return matchesCat && matchesSt && matchesWd && matchesStart && matchesEnd;
+    });
+
+    return (
+      <div className="glass-panel p-6 space-y-5 font-sans select-none flex flex-col h-[82vh]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-base font-bold text-slate-800">Live Infrastructure Grievances Map</h2>
+            <p className="text-[10px] text-slate-500 mt-0.5 font-bold">GIS mapping portal— locate active infrastructure problems reported by your community.</p>
+          </div>
+          
+          <div className="flex items-center gap-2 self-start md:self-auto bg-slate-100 border border-slate-200 rounded-xl p-1.5">
+            <button 
+              onClick={() => setShowHeat(false)}
+              className={`px-3 py-1 rounded-lg text-[9.5px] font-bold transition-all duration-150 cursor-pointer ${
+                !showHeat 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Standard Pins
+            </button>
+            <button 
+              onClick={() => setShowHeat(true)}
+              className={`px-3 py-1 rounded-lg text-[9.5px] font-bold transition-all duration-150 cursor-pointer ${
+                showHeat 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Heatmap Density
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 text-xs font-bold text-slate-600">
+          <div className="space-y-1">
+            <label className="text-[9px] text-slate-400 uppercase font-extrabold">Category</label>
+            <select value={cat} onChange={e => setCat(e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-[10px] font-bold text-slate-600 focus:outline-none">
+              <option value="all">All Categories</option>
+              {['Garbage / Waste Management', 'Road Damage', 'Water Supply Problems', 'Drainage / Sewer', 'Street Light / Electricity', 'Public Infrastructure', 'Accident / Traffic Emergency', 'Fire Emergency', 'Public Safety / Crime'].map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[9px] text-slate-400 uppercase font-extrabold">Status</label>
+            <select value={st} onChange={e => setSt(e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-[10px] font-bold text-slate-600 focus:outline-none">
+              <option value="all">All Statuses</option>
+              {['Submitted', 'Under_Review', 'Assigned', 'In_Progress', 'Resolved', 'Closed'].map(s => (
+                <option key={s} value={s}>{s.replace('_', ' ')}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[9px] text-slate-400 uppercase font-extrabold">Ward Number</label>
+            <select value={wd} onChange={e => setWd(e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-[10px] font-bold text-slate-600 focus:outline-none">
+              <option value="all">All Wards</option>
+              {Array.from({ length: 19 }, (_, i) => String(i + 1)).map(w => (
+                <option key={w} value={w}>Ward {w}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[9px] text-slate-400 uppercase font-extrabold" title="Filter reports by submission date range">Submitted From</label>
+            <input type="date" value={startD} onChange={e => setStartD(e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg p-1 text-[10px] font-bold text-slate-600 focus:outline-none" title="Filter reports by submission date range" />
+          </div>
+
+          <div className="space-y-1 col-span-2 md:col-span-1">
+            <label className="text-[9px] text-slate-400 uppercase font-extrabold" title="Filter reports by submission date range">Submitted To</label>
+            <input type="date" value={endD} onChange={e => setEndD(e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg p-1 text-[10px] font-bold text-slate-600 focus:outline-none" title="Filter reports by submission date range" />
+          </div>
+        </div>
+
+        <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
+          <LeafletMap reports={filtered} showHeatmap={showHeat} selectedWard={wd} />
+        </div>
+      </div>
+    );
+  };
+
+  const StatisticsView = () => {
+    const [range, setRange] = useState<'7d' | '30d' | '1y' | 'all'>('all');
+
+    const filtered = reports.filter(r => {
+      if (range === 'all') return true;
+      const days = { '7d': 7, '30d': 30, '1y': 365 }[range] || 365;
+      const limitDate = new Date();
+      limitDate.setDate(limitDate.getDate() - days);
+      return new Date(r.createdAt) >= limitDate;
+    });
+
+    const total = filtered.length;
+    const resolved = filtered.filter(r => ['Resolved', 'Closed'].includes(r.status)).length;
+    const rate = total > 0 ? Math.round((resolved / total) * 100) : 0;
+
+    const resolvedOnes = filtered.filter(r => ['Resolved', 'Closed'].includes(r.status));
+    const avgMs = resolvedOnes.length > 0 
+      ? resolvedOnes.reduce((sum, r) => sum + Math.max(0, new Date(r.updatedAt || r.createdAt).getTime() - new Date(r.createdAt).getTime()), 0) / resolvedOnes.length 
+      : 0;
+    const avgDays = Math.round((avgMs / (1000 * 60 * 60 * 24)) * 10) / 10 || 2.4;
+
+    const catData = filtered.reduce((acc: { name: string; count: number }[], r) => {
+      const existing = acc.find(x => x.name === r.category);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        acc.push({ name: r.category, count: 1 });
+      }
+      return acc;
+    }, []).sort((a, b) => b.count - a.count);
+
+    const wardData = filtered.reduce((acc: { name: string; count: number }[], r) => {
+      const key = `Ward ${r.wardId}`;
+      const existing = acc.find(x => x.name === key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        acc.push({ name: key, count: 1 });
+      }
+      return acc;
+    }, []).sort((a, b) => Number(a.name.split(' ')[1]) - Number(b.name.split(' ')[1]));
+
+    const dailySubmissions = filtered.reduce((acc: Record<string, number>, r) => {
+      const d = new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      acc[d] = (acc[d] || 0) + 1;
+      return acc;
+    }, {});
+    const lineData = Object.keys(dailySubmissions).map(k => ({
+      date: k,
+      count: dailySubmissions[k]
+    })).slice(-8);
+
+    return (
+      <div className="glass-panel p-6 space-y-5 font-sans select-none">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-base font-bold text-slate-800">Municipal Grievances Analytics</h2>
+            <p className="text-[10px] text-slate-500 mt-0.5 font-bold">Real-time statistics dashboard tracking workloads, response rates, and problem categories.</p>
+          </div>
+          
+          <div className="flex items-center gap-1.5 self-start md:self-auto bg-slate-100 border border-slate-200 rounded-xl p-1.5">
+            {[
+              { key: '7d', label: 'Last 7 Days' },
+              { key: '30d', label: 'Last 30 Days' },
+              { key: '1y', label: 'This Year' },
+              { key: 'all', label: 'All Time' }
+            ].map((btn) => (
+              <button 
+                key={btn.key}
+                onClick={() => setRange(btn.key as any)}
+                className={`px-3 py-1 rounded-lg text-[9.5px] font-bold transition-all duration-150 cursor-pointer ${
+                  range === btn.key 
+                    ? 'bg-white text-blue-600 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: 'Total Submitted', value: total, sub: 'Grievances received', color: 'text-blue-600 bg-blue-50/60 border-blue-100' },
+            { label: 'Total Resolved', value: resolved, sub: 'Work order completed', color: 'text-emerald-600 bg-emerald-50/60 border-emerald-100' },
+            { label: 'Resolution Rate', value: `${rate}%`, sub: 'Efficiency percentage', color: 'text-purple-600 bg-purple-50/60 border-purple-100' },
+            { label: 'Avg Resolution Time', value: `${avgDays} Days`, sub: 'Citizen ticket closure', color: 'text-orange-600 bg-orange-50/60 border-orange-100' }
+          ].map((kpi, idx) => (
+            <div key={idx} className={`border rounded-2xl p-4 flex flex-col justify-between shadow-sm min-h-[90px] ${kpi.color}`}>
+              <span className="text-[9px] font-extrabold uppercase tracking-wide text-slate-500">{kpi.label}</span>
+              <div className="mt-1">
+                <div className="text-xl font-extrabold font-sans tracking-tight">{kpi.value}</div>
+                <div className="text-[8px] font-bold text-slate-400 mt-0.5">{kpi.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm min-h-[300px]">
+            <h3 className="text-xs font-bold text-slate-800 mb-4 uppercase tracking-wider">Grievances Submissions Timeline</h3>
+            <div className="w-full h-60">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={lineData.length > 0 ? lineData : [{ date: 'Today', count: 0 }]}>
+                  <defs>
+                    <linearGradient id="chartBlue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="date" stroke="#94a3b8" fontSize={9} tickLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '8px', fontSize: '10px' }} />
+                  <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#chartBlue)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm min-h-[300px]">
+            <h3 className="text-xs font-bold text-slate-800 mb-4 uppercase tracking-wider">Breakdown by Category</h3>
+            <div className="w-full h-60">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={catData.length > 0 ? catData : [{ name: 'None', count: 0 }]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={7.5} tickLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '8px', fontSize: '10px' }} />
+                  <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm min-h-[300px] lg:col-span-2">
+            <h3 className="text-xs font-bold text-slate-800 mb-4 uppercase tracking-wider">Distribution Across Wards</h3>
+            <div className="w-full h-60">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={wardData.length > 0 ? wardData : [{ name: 'None', count: 0 }]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tickLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '8px', fontSize: '10px' }} />
+                  <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={16} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const CommunityView = () => {
+    const [suggestions, setSuggestions] = useState([
+      { id: '1', title: 'Install Community Trash Bin', description: 'Request to install a communal waste bin near the main square of Ward 15 to prevent roadside garbage dumping.', category: 'Sanitation', upvotes: 18, author: 'Sunita Bista', date: 'Jul 8, 2026', liked: false, comments: ['Great idea, need this urgently!', 'Let ward office coordinate this.'] },
+      { id: '2', title: 'Street Light Timing Adjustment', description: 'Adjust the automated timing for street lights in Ward 10. They turn on too late during the summer season.', category: 'Electricity', upvotes: 12, author: 'Hari Poudel', date: 'Jul 9, 2026', liked: false, comments: [] },
+      { id: '3', title: 'Clean Water Station in Ghorahi Park', description: 'Introduce a solar-powered public drinking water station in the central municipality park.', category: 'Water Supply', upvotes: 24, author: 'Maya Shrestha', date: 'Jul 10, 2026', liked: false, comments: ['This would benefit so many visitors.'] }
+    ]);
+    const [newTitle, setNewTitle] = useState('');
+    const [newDesc, setNewDesc] = useState('');
+    const [newCat, setNewCat] = useState('Sanitation');
+
+    const handleAddSuggestion = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newTitle.trim() || !newDesc.trim()) return;
+      const newSuggest = {
+        id: Date.now().toString(),
+        title: newTitle,
+        description: newDesc,
+        category: newCat,
+        upvotes: 1,
+        author: currentUser.name,
+        date: 'Just Now',
+        liked: true,
+        comments: []
+      };
+      setSuggestions([newSuggest, ...suggestions]);
+      setNewTitle('');
+      setNewDesc('');
+    };
+
+    const handleUpvoteSuggest = (id: string) => {
+      setSuggestions(prev => prev.map(s => {
+        if (s.id === id) {
+          return {
+            ...s,
+            upvotes: s.liked ? s.upvotes - 1 : s.upvotes + 1,
+            liked: !s.liked
+          };
+        }
+        return s;
+      }));
+    };
+
+    const leaderboard = [
+      { name: 'Ramesh Dahal', resolvedCount: 14, reputation: 280, rank: 1, avatar: 'RD' },
+      { name: 'Sunita Bista', resolvedCount: 11, reputation: 220, rank: 2, avatar: 'SB' },
+      { name: currentUser.name, resolvedCount: resolvedCount, reputation: resolvedCount * 50 + (citizenReports.length * 10) + 20, rank: 3, avatar: 'YP', isMe: true },
+      { name: 'Hari Poudel', resolvedCount: 4, reputation: 95, rank: 4, avatar: 'HP' },
+      { name: 'Maya Shrestha', resolvedCount: 2, reputation: 60, rank: 5, avatar: 'MS' }
+    ].sort((a, b) => b.reputation - a.reputation);
+
+    return (
+      <div className="glass-panel p-6 space-y-6 font-sans select-none">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-5">
+            <div>
+              <h2 className="text-base font-bold text-slate-800">Community Suggestions Feed</h2>
+              <p className="text-[10px] text-slate-500 mt-0.5 font-bold">Collaborate on municipal ideas, share community suggestions, and support citizen-led improvement initiatives.</p>
+            </div>
+
+            <form onSubmit={handleAddSuggestion} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Submit Suggestion to Community</h3>
+              <div className="space-y-2">
+                <input 
+                  type="text" 
+                  placeholder="Suggestion Title (e.g. Upgrade Ward Park)" 
+                  value={newTitle} 
+                  onChange={e => setNewTitle(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold focus:outline-none focus:border-blue-500" 
+                  required
+                />
+                <textarea 
+                  placeholder="Elaborate on how Ghorahi municipality can implement this idea..." 
+                  value={newDesc} 
+                  onChange={e => setNewDesc(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-lg p-3 text-xs font-semibold focus:outline-none focus:border-blue-500" 
+                  rows={2}
+                  required
+                />
+              </div>
+              <div className="flex justify-between items-center">
+                <select value={newCat} onChange={e => setNewCat(e.target.value)} className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-650 focus:outline-none">
+                  {['Sanitation', 'Road Infrastructure', 'Water Supply', 'Drainage', 'Electricity', 'Parks & Playgrounds', 'Public Safety'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-1.5 px-4 rounded-xl cursor-pointer">
+                  Post Suggestion
+                </button>
+              </div>
+            </form>
+
+            <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
+              {suggestions.map((s) => (
+                <div key={s.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3.5 hover:border-slate-300 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-0.5">
+                      <span className="bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide">{s.category}</span>
+                      <h4 className="text-xs font-bold text-slate-800 mt-1">{s.title}</h4>
+                    </div>
+                    <span className="text-[9px] text-slate-400 font-bold">{s.date}</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-bold leading-relaxed">{s.description}</p>
+                  
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-[9px] font-bold text-slate-400 select-none">
+                    <span>Proposed by: <strong className="text-slate-600">{s.author}</strong></span>
+                    
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => handleUpvoteSuggest(s.id)}
+                        className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-colors cursor-pointer ${
+                          s.liked 
+                            ? 'bg-blue-50 border-blue-200 text-blue-600 font-extrabold' 
+                            : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                        }`}
+                      >
+                        <ThumbsUp className="w-3.5 h-3.5" />
+                        <span>{s.upvotes} Upvotes</span>
+                      </button>
+                      <span className="flex items-center gap-1.5 py-1 text-slate-500">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>{s.comments.length} Comments</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col self-start space-y-4">
+            <div>
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Reputation Leaderboard</h3>
+              <p className="text-[9px] text-slate-400 font-bold mt-0.5">Top contributors in Ghorahi. Earn reputation points by filing verified complaints and reviewing resolved services.</p>
+            </div>
+            
+            <div className="space-y-3.5 select-none pt-2">
+              {leaderboard.map((user, idx) => (
+                <div key={idx} className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${
+                  user.isMe 
+                    ? 'bg-blue-50/50 border-blue-200 ring-1 ring-blue-300' 
+                    : 'bg-slate-50/40 border-slate-100'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 text-xs font-extrabold text-slate-400 text-center font-mono">#{idx + 1}</div>
+                    <div className="w-7 h-7 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center text-[10px] font-extrabold text-slate-600">
+                      {user.avatar}
+                    </div>
+                    <div>
+                      <div className="text-[10.5px] font-extrabold text-slate-800 flex items-center gap-1">
+                        {user.name}
+                        {user.isMe && <span className="bg-blue-600 text-white text-[7px] px-1 rounded uppercase tracking-wider font-extrabold">You</span>}
+                      </div>
+                      <div className="text-[8.5px] font-bold text-slate-400 mt-0.5">{user.resolvedCount} Issues Resolved</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[11px] font-extrabold text-slate-750 font-mono">{user.reputation}</span>
+                    <span className="text-[7.5px] font-extrabold text-slate-400 block tracking-wide uppercase">Points</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const ProfileView = () => {
+    const [editMode, setEditMode] = useState(false);
+    const [name, setName] = useState(currentUser.name);
+    const [email, setEmail] = useState(currentUser.email);
+    const [phone, setPhone] = useState(currentUser.phone || '9847800000');
+    const [ward, setWard] = useState(String(currentUser.wardId || 15));
+    const [msg, setMsg] = useState('');
+
+    const handleSave = (e: React.FormEvent) => {
+      e.preventDefault();
+      currentUser.name = name;
+      currentUser.email = email;
+      currentUser.phone = phone;
+      currentUser.wardId = Number(ward);
+      setMsg('Profile updated successfully!');
+      setEditMode(false);
+      setTimeout(() => setMsg(''), 3000);
+    };
+
+    const totalSubmitted = citizenReports.length;
+    const totalResolved = citizenReports.filter(r => ['Resolved', 'Closed'].includes(r.status)).length;
+    const totalActive = citizenReports.filter(r => ['Submitted', 'Under_Review', 'Assigned', 'In_Progress'].includes(r.status)).length;
+
+    return (
+      <div className="glass-panel p-6 space-y-6 font-sans select-none max-w-3xl mx-auto">
+        <div className="flex items-center gap-4 border-b border-slate-100 pb-5">
+          <div className="w-16 h-16 rounded-full bg-blue-600 border-2 border-white shadow flex items-center justify-center text-xl font-extrabold text-white">
+            YP
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-800">{currentUser.name}</h2>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide">Citizen User</span>
+              <span className="text-[10px] text-slate-400 font-bold">Member since Jan 2026</span>
+            </div>
+          </div>
+        </div>
+
+        {msg && (
+          <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-emerald-600 text-xs font-bold animate-pulse">
+            ✓ {msg}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            { label: 'Total Grievances Filed', count: totalSubmitted },
+            { label: 'Active Grievances', count: totalActive },
+            { label: 'Resolved Issues', count: totalResolved }
+          ].map((stat, idx) => (
+            <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center shadow-sm">
+              <span className="text-[8.5px] font-extrabold uppercase text-slate-400 tracking-wide">{stat.label}</span>
+              <div className="text-2xl font-extrabold text-slate-800 mt-1 font-mono">{stat.count}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Profile Details</h3>
+              <button 
+                onClick={() => setEditMode(!editMode)}
+                className="text-[10.5px] font-bold text-blue-600 hover:underline cursor-pointer"
+              >
+                {editMode ? 'Cancel' : 'Edit Profile'}
+              </button>
+            </div>
+
+            {editMode ? (
+              <form onSubmit={handleSave} className="space-y-3.5 text-xs text-slate-700 font-bold">
+                <div className="space-y-1">
+                  <label className="text-[9px] text-slate-400 uppercase">Full Name</label>
+                  <input type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold focus:outline-none focus:border-blue-500" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] text-slate-400 uppercase">Email Address</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold focus:outline-none focus:border-blue-500" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] text-slate-400 uppercase">Phone Number</label>
+                  <input type="text" value={phone} onChange={e => setPhone(e.target.value)} required className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold focus:outline-none focus:border-blue-500" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] text-slate-400 uppercase">Assigned Ward ID</label>
+                  <select value={ward} onChange={e => setWard(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold focus:outline-none focus:border-blue-500">
+                    {Array.from({ length: 19 }, (_, i) => String(i + 1)).map(w => (
+                      <option key={w} value={w}>Ward {w}</option>
+                    ))}
+                  </select>
+                </div>
+                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer">
+                  Save Settings
+                </button>
+              </form>
+            ) : (
+              <div className="space-y-3 select-none text-[11px] text-slate-600 font-semibold">
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-400">FullName</span>
+                  <span className="font-extrabold text-slate-800">{currentUser.name}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-400">Email Address</span>
+                  <span className="font-extrabold text-slate-800">{currentUser.email}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-400">Phone Number</span>
+                  <span className="font-extrabold text-slate-800">{phone}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-400">Ward Residence</span>
+                  <span className="font-extrabold text-slate-800">Ward {currentUser.wardId || 15}</span>
+                </div>
+                
+                <button 
+                  onClick={() => setCurrentTab('my-reports')}
+                  className="w-full mt-4 flex items-center justify-center gap-1.5 border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-750 py-2.5 rounded-xl transition-all cursor-pointer font-bold"
+                >
+                  <ClipboardList className="w-4 h-4" />
+                  <span>Access My Submitted Reports</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-2">Trust Score & Badges</h3>
+            
+            <div className="space-y-4">
+              <div className="bg-gradient-to-br from-blue-900 to-indigo-950 text-white rounded-xl p-4 shadow-sm">
+                <span className="text-[7.5px] font-extrabold uppercase text-blue-300 tracking-wider">Civic Trust Level</span>
+                <div className="text-2xl font-extrabold mt-0.5 font-sans tracking-tight">Active Verifier</div>
+                <p className="text-[9px] text-slate-300 font-bold leading-normal mt-1">Submit correct reports to gain recognition and unlock direct feedback prioritization levels.</p>
+              </div>
+
+              <div className="space-y-3">
+                <span className="text-[9px] text-slate-400 uppercase font-extrabold block">Earned Badges</span>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { name: 'First Report', color: 'bg-blue-50 text-blue-600 border border-blue-100', desc: 'Filed first grievance' },
+                    { name: 'Community Helper', color: 'bg-emerald-50 text-emerald-600 border border-emerald-100', desc: 'Resolved 3 community complaints' },
+                    { name: 'Active Verifier', color: 'bg-purple-50 text-purple-600 border border-purple-100', desc: 'Trust verified above 90%' }
+                  ].map((b, idx) => (
+                    <div key={idx} className={`p-2 rounded-lg text-center flex-1 min-w-[90px] shadow-sm select-none ${b.color}`} title={b.desc}>
+                      <Award className="w-5 h-5 mx-auto mb-1 opacity-90" />
+                      <div className="text-[8.5px] font-extrabold whitespace-nowrap">{b.name}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const HelpSupportView = () => {
+    const [faqOpen, setFaqOpen] = useState<Record<string, boolean>>({});
+    const [subTitle, setSubTitle] = useState('');
+    const [subEmail, setSubEmail] = useState(currentUser.email);
+    const [subMsg, setSubMsg] = useState('');
+    const [success, setSuccess] = useState('');
+
+    const toggleFaq = (key: string) => {
+      setFaqOpen(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    const handleFormSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      setSuccess('Your support inquiry has been submitted! Our officers will respond shortly.');
+      setSubTitle('');
+      setSubMsg('');
+      setTimeout(() => setSuccess(''), 4000);
+    };
+
+    const faqs = [
+      { key: 'q1', q: 'How long does it take for a complaint to be resolved?', a: 'Once verified, the municipality executive office routes the issue to the relevant department (e.g. Roads Division) within 3 business days. Resolution time varies depending on construction requirements, but minor repairs are addressed in 5-10 business days.' },
+      { key: 'q2', q: 'Can I edit my grievance coordinates after submitting?', a: 'You can only edit coordinates or complaint details while the status is "Submitted". Once reviewed or assigned to an engineer, details cannot be modified to maintain verification records.' },
+      { key: 'q3', q: 'What are Community Verification Points?', a: 'Other citizens can upvote or mark your reported issue as "supported" if they verify the problem themselves. Highly supported complaints gain higher priority rankings for municipal action.' }
+    ];
+
+    return (
+      <div className="glass-panel p-6 space-y-6 font-sans select-none max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-800">Frequently Asked Questions</h2>
+              <p className="text-[10px] text-slate-500 mt-0.5 font-bold">Find quick solutions regarding response times, verification metrics, and routing paths.</p>
+            </div>
+
+            <div className="space-y-2.5">
+              {faqs.map(faq => {
+                const isOpen = !!faqOpen[faq.key];
+                return (
+                  <div key={faq.key} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    <button 
+                      onClick={() => toggleFaq(faq.key)}
+                      className="w-full p-3.5 flex justify-between items-center text-[10.5px] font-extrabold text-slate-700 hover:bg-slate-50 transition-colors text-left cursor-pointer"
+                    >
+                      <span>{faq.q}</span>
+                      <span className="text-xs text-slate-400 font-normal">{isOpen ? '−' : '+'}</span>
+                    </button>
+                    {isOpen && (
+                      <div className="p-3.5 border-t border-slate-100 bg-slate-50/40 text-[10px] font-semibold leading-relaxed text-slate-500 select-text">
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col space-y-4">
+              <div>
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Alternative Filing Channels</h3>
+                <p className="text-[9px] text-slate-400 font-bold mt-0.5">Contact Ghorahi Municipality directly through any official integration channel.</p>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-3 text-center">
+                {[
+                  { label: 'Online Portal', val: 'ghorahimun.gov.np', color: 'text-blue-600 bg-blue-50/50' },
+                  { label: 'Viber / SMS', val: '9847800000', color: 'text-purple-600 bg-purple-50/50' },
+                  { label: 'WhatsApp', val: '9847811111', color: 'text-emerald-600 bg-emerald-50/50' },
+                  { label: 'Citizen Helpline', val: 'Hotline 1111', color: 'text-rose-600 bg-rose-50/50' },
+                  { label: 'Twitter Handle', val: '@GhorahiMuni', color: 'text-sky-600 bg-sky-50/50' },
+                  { label: 'Official Facebook', val: 'fb.com/ghorahimun', color: 'text-blue-700 bg-blue-50/60' }
+                ].map((ch, idx) => (
+                  <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-1 shadow-sm">
+                    <span className="text-[8px] font-bold text-slate-400 uppercase block">{ch.label}</span>
+                    <span className="text-[9px] font-extrabold text-slate-700 block leading-tight">{ch.val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col self-start space-y-4">
+            <div>
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Support Desk Request</h3>
+              <p className="text-[9px] text-slate-400 font-bold mt-0.5">Submit inquiry requests unrelated to community complaints (e.g. system logins, password changes).</p>
+            </div>
+
+            {success && (
+              <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-emerald-600 text-xs font-bold">
+                ✓ {success}
+              </div>
+            )}
+
+            <form onSubmit={handleFormSubmit} className="space-y-3.5 text-xs text-slate-700 font-bold">
+              <div className="space-y-1">
+                <label className="text-[9px] text-slate-400 uppercase">Inquiry Subject</label>
+                <input 
+                  type="text" 
+                  value={subTitle} 
+                  onChange={e => setSubTitle(e.target.value)}
+                  placeholder="e.g. Profile editing issue" 
+                  required 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold focus:outline-none focus:border-blue-500" 
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] text-slate-400 uppercase">Contact Email</label>
+                <input 
+                  type="email" 
+                  value={subEmail} 
+                  onChange={e => setSubEmail(e.target.value)}
+                  required 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold focus:outline-none focus:border-blue-500" 
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] text-slate-400 uppercase">Message</label>
+                <textarea 
+                  value={subMsg} 
+                  onChange={e => setSubMsg(e.target.value)}
+                  placeholder="Describe your inquiry..." 
+                  required 
+                  rows={4}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold focus:outline-none focus:border-blue-500" 
+                />
+              </div>
+
+              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer">
+                Submit Help Request
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (activeView === 'report-form') {
     return (
       <div className="glass-panel p-6">
@@ -672,23 +1656,25 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
 
             {/* Date Range Start */}
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase tracking-wider text-slate-400">Start Date</label>
+              <label className="text-[9px] uppercase tracking-wider text-slate-400" title="Filter reports by submission date range">Submitted From</label>
               <input
                 type="date"
                 value={filterStartDate}
                 onChange={e => setFilterStartDate(e.target.value)}
                 className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600"
+                title="Filter reports by submission date range"
               />
             </div>
 
             {/* Date Range End */}
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] uppercase tracking-wider text-slate-400">End Date</label>
+              <label className="text-[9px] uppercase tracking-wider text-slate-400" title="Filter reports by submission date range">Submitted To</label>
               <input
                 type="date"
                 value={filterEndDate}
                 onChange={e => setFilterEndDate(e.target.value)}
                 className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600"
+                title="Filter reports by submission date range"
               />
             </div>
           </div>
@@ -765,6 +1751,34 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
         </div>
       </div>
     );
+  }
+
+  if (activeView === 'active-reports') {
+    return <ActiveReportsView />;
+  }
+
+  if (activeView === 'alerts') {
+    return <AlertsView />;
+  }
+
+  if (activeView === 'map-view') {
+    return <MapViewFull />;
+  }
+
+  if (activeView === 'statistics') {
+    return <StatisticsView />;
+  }
+
+  if (activeView === 'community') {
+    return <CommunityView />;
+  }
+
+  if (activeView === 'profile') {
+    return <ProfileView />;
+  }
+
+  if (activeView === 'help') {
+    return <HelpSupportView />;
   }
 
   return (
