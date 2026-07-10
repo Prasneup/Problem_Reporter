@@ -53,6 +53,41 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     handleAutofillGps();
   }, []);
 
+  // Center map on user's registered ward when user profile changes
+  useEffect(() => {
+    if (currentUser?.wardId) {
+      const wardId = currentUser.wardId;
+      const centers: Record<number, [number, number]> = {
+        1: [28.085, 82.445],
+        2: [28.092, 82.465],
+        3: [28.080, 82.495],
+        4: [28.068, 82.510],
+        5: [28.055, 82.520],
+        6: [28.042, 82.505],
+        7: [28.035, 82.485],
+        8: [28.045, 82.455],
+        9: [28.058, 82.440],
+        10: [28.065, 82.460],
+        11: [28.072, 82.475],
+        12: [28.060, 82.485],
+        13: [28.050, 82.495],
+        14: [28.075, 82.500],
+        15: [28.064, 82.480],
+        16: [28.090, 82.515],
+        17: [28.100, 82.480],
+        18: [28.110, 82.460],
+        19: [28.105, 82.440]
+      };
+      const center = centers[wardId] || [28.064, 82.480];
+      setCoords({ lat: center[0], lng: center[1] });
+      setWard(wardId);
+      
+      const geoResult = detectMunicipalityAndWard(center[0], center[1]);
+      setMuni(geoResult.municipalityName);
+      setAddress(geoResult.address);
+    }
+  }, [currentUser]);
+
   const handleMapClick = (lat: number, lng: number, accuracy: number = 2.0) => {
     setCoords({ lat, lng });
     setGpsAccuracy(accuracy);
