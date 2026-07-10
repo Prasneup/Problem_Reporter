@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { DANG_CENTER } from '../../constants/municipalities';
+import { detectMunicipalityAndWard } from '../../utils/civicUtils';
 import { ZoomIn, ZoomOut, Compass } from 'lucide-react';
 
 interface LocationPickerMapProps {
@@ -26,7 +27,7 @@ export const LocationPickerMap: React.FC<LocationPickerMapProps> = ({
   gpsAccuracy,
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<L.Map | null>(null);
+  const [map, setMap] = useState<L.Map | null>(null);
   const placementMarker = useRef<L.Marker | null>(null);
   const accuracyCircle = useRef<L.Circle | null>(null);
   const boundaryGroup = useRef<L.FeatureGroup | null>(null);
@@ -34,26 +35,26 @@ export const LocationPickerMap: React.FC<LocationPickerMapProps> = ({
 
   // Initialize Map
   useEffect(() => {
-    if (!mapRef.current || mapInstance.current) return;
+    if (!mapRef.current || map) return;
 
     // Default to selectedCoords or Dang Center
     const initialCenter = selectedCoords
       ? [selectedCoords.lat, selectedCoords.lng]
       : [DANG_CENTER.lat, DANG_CENTER.lng];
 
-    const map = L.map(mapRef.current, { zoomControl: false }).setView(
+    const mapInst = L.map(mapRef.current, { zoomControl: false }).setView(
       initialCenter as L.LatLngExpression,
       selectedCoords ? 16 : 13
     );
-    mapInstance.current = map;
+    setMap(mapInst);
 
     // Minimal light style tile layer using CartoDB Positron
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       maxZoom: 20
-    }).addTo(map);
+    }).addTo(mapInst);
 
-    boundaryGroup.current = L.featureGroup().addTo(map);
+    boundaryGroup.current = L.featureGroup().addTo(mapInst);
 
     // Render Municipal Boundary Overlay (helpful boundary limit helper)
     const boundaryPoly = L.polygon(GHORAHI_BOUNDARY, {
@@ -67,92 +68,118 @@ export const LocationPickerMap: React.FC<LocationPickerMapProps> = ({
     boundaryGroup.current.addLayer(boundaryPoly);
 
     // Allow user to tap/click map to drop/move pin
-    map.on('click', (e: L.LeafletMouseEvent) => {
+    mapInst.on('click', (e: L.LeafletMouseEvent) => {
       onSelectCoords(e.latlng.lat, e.latlng.lng, 2.0); // manual set is high accuracy (2.0m)
     });
 
     return () => {
-      map.remove();
-      mapInstance.current = null;
+      mapInst.remove();
+      setMap(null);
     };
   }, []);
 
   // Update selection marker and accuracy circle when selectedCoords or accuracy changes
   useEffect(() => {
-    const map = mapInstance.current;
     if (!map || !selectedCoords) return;
 
-    // 1. Update/Create marker
+    // 1. Remove old marker & circle if they exist to force clean redraw
     if (placementMarker.current) {
-      placementMarker.current.setLatLng([selectedCoords.lat, selectedCoords.lng]);
-    } else {
-      placementMarker.current = L.marker([selectedCoords.lat, selectedCoords.lng], {
-        draggable: true,
-        icon: L.divIcon({
-          html: `<div class="relative flex items-center justify-center">
-            <span class="animate-ping absolute inline-flex h-6 w-6 rounded-full bg-blue-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-600 border-2 border-white shadow"></span>
-          </div>`,
-          className: '',
-          iconSize: [24, 24],
-          iconAnchor: [12, 12]
-        })
-      }).addTo(map);
-
-      // Listen to drag events
-      placementMarker.current.on('dragstart', () => {
-        isDragging.current = true;
-      });
-
-      placementMarker.current.on('drag', (e: any) => {
-        // Move circle dynamically as marker is dragged
-        if (accuracyCircle.current) {
-          accuracyCircle.current.setLatLng(e.latlng);
-        }
-      });
-
-      placementMarker.current.on('dragend', (e: any) => {
-        isDragging.current = false;
-        const newLatLng = e.target.getLatLng();
-        onSelectCoords(newLatLng.lat, newLatLng.lng, 2.0);
-      });
+      map.removeLayer(placementMarker.current);
+      placementMarker.current = null;
     }
-
-    // 2. Update/Create accuracy circle
-    const currentAccuracy = gpsAccuracy || 2.0;
     if (accuracyCircle.current) {
-      accuracyCircle.current.setLatLng([selectedCoords.lat, selectedCoords.lng]);
-      accuracyCircle.current.setRadius(currentAccuracy);
-    } else {
-      accuracyCircle.current = L.circle([selectedCoords.lat, selectedCoords.lng], {
-        radius: currentAccuracy,
-        color: '#2563eb',
-        fillColor: '#3b82f6',
-        fillOpacity: 0.15,
-        weight: 1.5,
-        dashArray: '3, 6'
-      }).addTo(map);
+      map.removeLayer(accuracyCircle.current);
+      accuracyCircle.current = null;
     }
 
-    // 3. Pan/Zoom map only if we are not actively dragging the marker
+    // 2. Create new marker with inline style for absolute guarantee of rendering
+    placementMarker.current = L.marker([selectedCoords.lat, selectedCoords.lng], {
+      draggable: true,
+      icon: L.divIcon({
+        html: `<div style="
+          position: relative;
+          width: 22px;
+          height: 22px;
+          background-color: #2563eb;
+          border: 2px solid white;
+          border-radius: 50%;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          <div style="
+            width: 7px;
+            height: 7px;
+            background-color: white;
+            border-radius: 50%;
+          "></div>
+        </div>`,
+        className: '',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+      })
+    }).addTo(map);
+
+    // Bind permanent tooltip showing the geocoded location name / address
+    const geo = detectMunicipalityAndWard(selectedCoords.lat, selectedCoords.lng);
+    placementMarker.current.bindTooltip(
+      `<div style="font-family: sans-serif; font-weight: 800; font-size: 9px; color: #1e293b; line-height: 1.25;">📍 ${geo.address}</div>`,
+      {
+        permanent: true,
+        direction: 'top',
+        offset: [0, -10],
+        className: 'bg-white/95 border border-slate-200 shadow-md rounded-lg p-1.5 backdrop-blur-sm select-none pointer-events-none'
+      }
+    ).openTooltip();
+
+    // Listen to drag events
+    placementMarker.current.on('dragstart', () => {
+      isDragging.current = true;
+    });
+
+    placementMarker.current.on('drag', (e: any) => {
+      if (accuracyCircle.current) {
+        accuracyCircle.current.setLatLng(e.latlng);
+      }
+    });
+
+    placementMarker.current.on('dragend', (e: any) => {
+      isDragging.current = false;
+      const newLatLng = e.target.getLatLng();
+      onSelectCoords(newLatLng.lat, newLatLng.lng, 2.0);
+    });
+
+    // 3. Create accuracy circle
+    const currentAccuracy = gpsAccuracy || 2.0;
+    accuracyCircle.current = L.circle([selectedCoords.lat, selectedCoords.lng], {
+      radius: currentAccuracy,
+      color: '#2563eb',
+      fillColor: '#3b82f6',
+      fillOpacity: 0.15,
+      weight: 1.5,
+      dashArray: '3, 6'
+    }).addTo(map);
+
+    // 4. Pan/Zoom map only if we are not actively dragging the marker
     if (!isDragging.current) {
       map.setView([selectedCoords.lat, selectedCoords.lng], 16);
     }
-  }, [selectedCoords, gpsAccuracy]);
+  }, [map, selectedCoords, gpsAccuracy]);
 
   const handleZoomIn = () => {
-    mapInstance.current?.zoomIn();
+    map?.zoomIn();
   };
 
   const handleZoomOut = () => {
-    mapInstance.current?.zoomOut();
+    map?.zoomOut();
   };
 
   const handleRecenter = () => {
     if (selectedCoords) {
-      mapInstance.current?.setView([selectedCoords.lat, selectedCoords.lng], 16);
+      map?.setView([selectedCoords.lat, selectedCoords.lng], 16);
     } else {
-      mapInstance.current?.setView([DANG_CENTER.lat, DANG_CENTER.lng], 13);
+      map?.setView([DANG_CENTER.lat, DANG_CENTER.lng], 13);
     }
   };
 
