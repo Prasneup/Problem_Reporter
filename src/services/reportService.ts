@@ -72,6 +72,40 @@ interface DbBudgetRow {
   spent: number;
 }
 
+const CATEGORY_TO_DB: Record<string, string> = {
+  'Garbage / Waste Management': 'Garbage',
+  'Road Damage': 'Road Damage',
+  'Water Supply Problems': 'Water Supply',
+  'Drainage / Sewer': 'Drainage',
+  'Street Light / Electricity': 'Street Lights',
+  'Public Infrastructure': 'Infrastructure Problems',
+  'Accident / Traffic Emergency': 'Emergency',
+  'Fire Emergency': 'Emergency',
+  'Public Safety / Crime': 'Public Safety'
+};
+
+const DB_TO_CATEGORY: Record<string, ReportCategory> = {
+  'Garbage': 'Garbage / Waste Management',
+  'Road Damage': 'Road Damage',
+  'Potholes': 'Road Damage',
+  'Water Supply': 'Water Supply Problems',
+  'Drainage': 'Drainage / Sewer',
+  'Street Lights': 'Street Light / Electricity',
+  'Electricity': 'Street Light / Electricity',
+  'Infrastructure Problems': 'Public Infrastructure',
+  'Public Safety': 'Public Safety / Crime',
+  'Emergency': 'Accident / Traffic Emergency',
+  'Other': 'Public Infrastructure'
+};
+
+export function mapCategoryToDb(category: string): string {
+  return CATEGORY_TO_DB[category] || 'Other';
+}
+
+export function mapDbToCategory(dbCategory: string): ReportCategory {
+  return DB_TO_CATEGORY[dbCategory] || 'Public Infrastructure';
+}
+
 export const reportService = {
   async fetchReports(): Promise<Report[]> {
     await authService.ensureMappings();
@@ -92,7 +126,7 @@ export const reportService = {
         id: r.id,
         title: r.title,
         description: r.description,
-        category: r.category,
+        category: mapDbToCategory(r.category),
         latitude: r.latitude,
         longitude: r.longitude,
         address: r.address,
@@ -138,7 +172,7 @@ export const reportService = {
     const reportRow = {
       title: report.title,
       description: report.description,
-      category: report.category,
+      category: mapCategoryToDb(report.category),
       latitude: report.latitude,
       longitude: report.longitude,
       address: report.address,
@@ -170,7 +204,7 @@ export const reportService = {
           url: url,
           image_type: 'before',
           ai_analysis: report.aiAnalysis || {
-            category: report.category,
+            category: mapCategoryToDb(report.category),
             confidence: 0.95,
             qualityScore: 0.88,
             issuesDetected: [report.category.toLowerCase().replace(' ', '_')],
