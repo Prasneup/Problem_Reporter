@@ -795,13 +795,9 @@ export const useCivicStore = create<CivicState>()(
     {
       name: 'dang-smart-city-store',
       partialize: (state) => ({
-        reports: state.reports,
-        comments: state.comments,
-        assignments: state.assignments,
-        budgets: state.budgets,
-        notifications: state.notifications,
         language: state.language,
-        userLikes: state.userLikes
+        userLikes: state.userLikes,
+        offlineQueue: state.offlineQueue
       })
     }
   )
