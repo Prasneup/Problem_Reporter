@@ -11,7 +11,7 @@ import {
   AlertTriangle, Sun, Clock, Users, Phone, Map, FileText, 
   MessageCircle, Info, CheckCircle, RefreshCw, EyeOff, Award, Globe, 
   MessageSquare, Shield, ArrowRight, ThumbsUp, Send, X, MapPin, Play,
-  Eye, Pencil, Trash2, Image, FileDown, Star, Search, 
+  Eye, Pencil, Trash2, Image as ImageIcon, FileDown, Star, Search, 
   ArrowUpDown, Plus, AlertCircle, Bell, ClipboardList
 } from 'lucide-react';
 import { MediaLightbox } from '../components/common/MediaLightbox';
@@ -62,7 +62,7 @@ const MediaPreview: React.FC<{ report: any; onClickMedia: (idx: number) => void 
   if (mediaType === 'none') {
     return (
       <div className="w-full h-full bg-slate-50 flex flex-col items-center justify-center text-slate-400 select-none border-r border-slate-100">
-        <Image className="w-6 h-6 stroke-[1.2] text-slate-300 mb-1" />
+        <ImageIcon className="w-6 h-6 stroke-[1.2] text-slate-300 mb-1" />
         <span className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400">No Media</span>
       </div>
     );
@@ -1768,7 +1768,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                         {renderActionButton(<MapPin className="w-3.5 h-3.5 text-emerald-600" />, "View Location", () => setMapLocationReport(r))}
 
                         {/* 5. Uploaded Media Gallery (Always) */}
-                        {renderActionButton(<Image className="w-3.5 h-3.5 text-indigo-600" />, "View Photos & Videos", () => openLightboxForReport(r))}
+                        {renderActionButton(<ImageIcon className="w-3.5 h-3.5 text-indigo-600" />, "View Photos & Videos", () => openLightboxForReport(r))}
 
                         {/* 6. Download PDF (Always) */}
                         {renderActionButton(<FileDown className="w-3.5 h-3.5 text-slate-600" />, "Download Receipt", () => handleDownloadPDF(r))}
