@@ -47,7 +47,7 @@ const MediaPreview: React.FC<{ report: any; onClickMedia: (idx: number) => void 
   
   // Resolve first cover media
   let mediaUrl = '';
-  let mediaType: 'image' | 'video' = 'image';
+  let mediaType: 'image' | 'video' | 'none' = 'image';
 
   if (hasVideo) {
     mediaUrl = report.videos[0].url;
@@ -56,9 +56,16 @@ const MediaPreview: React.FC<{ report: any; onClickMedia: (idx: number) => void 
     mediaUrl = report.images[0].url;
     mediaType = 'image';
   } else {
-    // Fallback static placeholder
-    mediaUrl = CATEGORY_IMAGES[report.category] || CATEGORY_IMAGES.default;
-    mediaType = 'image';
+    mediaType = 'none';
+  }
+
+  if (mediaType === 'none') {
+    return (
+      <div className="w-full h-full bg-slate-50 flex flex-col items-center justify-center text-slate-400 select-none border-r border-slate-100">
+        <Image className="w-6 h-6 stroke-[1.2] text-slate-300 mb-1" />
+        <span className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400">No Media</span>
+      </div>
+    );
   }
 
   // Calculate remaining count
