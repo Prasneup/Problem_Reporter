@@ -225,6 +225,7 @@ export const useCivicStore = create<CivicState>()(
             return;
           } catch (err) {
             console.error('Error submitting report to Supabase:', err);
+            throw err;
           }
         }
 

@@ -45,6 +45,8 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [isLowAccuracyWarning, setIsLowAccuracyWarning] = useState(false);
 
+  const [submitting, setSubmitting] = useState(false);
+
   // Duplicate Check triggers
   const [showDuplicateOverlay, setShowDuplicateOverlay] = useState(false);
 
@@ -233,7 +235,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     return latDiff < 0.005 && lngDiff < 0.005 && r.status !== 'Resolved' && r.status !== 'Closed';
   }) : false;
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!coords) return;
 
@@ -245,27 +247,35 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
       return;
     }
 
-    submitReport({
-      title,
-      description: desc,
-      category,
-      latitude: coords.lat,
-      longitude: coords.lng,
-      address,
-      municipalityId: muni,
-      wardId: ward,
-      isEmergency,
-      budgetEstimated: isEmergency ? 250000 : 45000,
-      budgetSpent: 0,
-      imageUrls: uploadedImages,
-      videoUrl: videoUrl || undefined,
-      aiAnalysis: aiAnalysisDetails ? {
-        ...aiAnalysisDetails,
-        trustScore,
-        gpsAccuracyRadius: gpsAccuracy
-      } : undefined
-    });
-    onSuccess();
+    setSubmitting(true);
+    try {
+      await submitReport({
+        title,
+        description: desc,
+        category,
+        latitude: coords.lat,
+        longitude: coords.lng,
+        address,
+        municipalityId: muni,
+        wardId: ward,
+        isEmergency,
+        budgetEstimated: isEmergency ? 250000 : 45000,
+        budgetSpent: 0,
+        imageUrls: uploadedImages,
+        videoUrl: videoUrl || undefined,
+        aiAnalysis: aiAnalysisDetails ? {
+          ...aiAnalysisDetails,
+          trustScore,
+          gpsAccuracyRadius: gpsAccuracy
+        } : undefined
+      });
+      onSuccess();
+    } catch (err: any) {
+      console.error('Failed to submit report:', err);
+      alert('Error submitting report: ' + (err.message || err));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -453,10 +463,10 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
 
       <button 
         type="submit" 
-        disabled={!coords || (imgUrl && !aiVerified) || (hasDuplicate && showDuplicateOverlay)} 
+        disabled={submitting || !coords || (imgUrl && !aiVerified) || (hasDuplicate && showDuplicateOverlay)} 
         className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-transparent font-bold py-2.5 rounded-xl text-xs transition-colors shadow-sm text-white cursor-pointer"
       >
-        Submit Report
+        {submitting ? 'Submitting Report...' : 'Submit Report'}
       </button>
     </form>
   );
