@@ -2761,7 +2761,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
               <span>Ghorahi Emergency Contacts</span>
             </h3>
             <div className="space-y-2 text-xs font-mono">
-              <div className="flex justify-between border-b border-slate-100 pb-1.5"><span>Ward Police Desk:</span> <span>100 / 082-560199</span></div>
+              <div className="flex justify-between border-b border-slate-100 pb-1.5"><span>Ward Police Desk:</span> <span>100 / 041-523343</span></div>
               <div className="flex justify-between border-b border-slate-100 pb-1.5"><span>Ghorahi Fire Station:</span> <span>101 / 082-560233</span></div>
               <div className="flex justify-between border-b border-slate-100 pb-1.5"><span>Dang District Hospital:</span> <span>082-560144</span></div>
               <div className="flex justify-between"><span>City Inquiry Desk:</span> <span>082-560087</span></div>
