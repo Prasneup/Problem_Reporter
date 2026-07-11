@@ -64,11 +64,11 @@ function App() {
     };
   }, [loadInitialData, setCurrentUser]);
 
-  // Real-time polling to fetch updates from database
+  // Real-time polling to fetch updates from database (optimized to 45 seconds to prevent page lag)
   useEffect(() => {
     const pollInterval = setInterval(() => {
       loadInitialData();
-    }, 6000);
+    }, 45000);
 
     return () => clearInterval(pollInterval);
   }, [loadInitialData]);
