@@ -2,7 +2,7 @@ import type { UserProfile, Report, Comment, WardBudget } from '../types';
 
 export const MOCK_PROFILES: Record<string, UserProfile> = {
   citizen: {
-    id: 'p-citizen',
+    id: '00000000-0000-0000-0000-000000000001',
     name: 'Yogesh Pulami',
     email: 'yogi@dang.gov.np',
     phone: '9847800000',
@@ -12,7 +12,7 @@ export const MOCK_PROFILES: Record<string, UserProfile> = {
     createdAt: '2026-01-10T10:00:00Z'
   },
   admin: {
-    id: 'p-admin',
+    id: '00000000-0000-0000-0000-000000000002',
     name: 'Ghorahi Municipality Admin',
     email: 'admin@ghorahimun.gov.np',
     phone: '9857800001',
@@ -22,7 +22,7 @@ export const MOCK_PROFILES: Record<string, UserProfile> = {
     createdAt: '2026-01-01T10:00:00Z'
   },
   sanitation_officer: {
-    id: 'p-sanitation',
+    id: '00000000-0000-0000-0000-000000000003',
     name: 'Ramesh Chaudhary (Sanitation)',
     email: 'garbage@ghorahimun.demo',
     phone: '9867800002',
@@ -33,7 +33,7 @@ export const MOCK_PROFILES: Record<string, UserProfile> = {
     createdAt: '2026-02-01T08:30:00Z'
   },
   roads_officer: {
-    id: 'p-roads',
+    id: '00000000-0000-0000-0000-000000000004',
     name: 'Binod Bhandari (Roads)',
     email: 'roads@ghorahimun.demo',
     phone: '9807800003',
@@ -44,7 +44,7 @@ export const MOCK_PROFILES: Record<string, UserProfile> = {
     createdAt: '2026-01-01T10:00:00Z'
   },
   water_officer: {
-    id: 'p-water',
+    id: '00000000-0000-0000-0000-000000000005',
     name: 'Krishna Raj Oli (Water)',
     email: 'water@ghorahimun.demo',
     phone: '9817800004',
@@ -55,7 +55,7 @@ export const MOCK_PROFILES: Record<string, UserProfile> = {
     createdAt: '2026-01-01T10:00:00Z'
   },
   drainage_officer: {
-    id: 'p-drainage',
+    id: '00000000-0000-0000-0000-000000000006',
     name: 'Shyam Sundar Shrestha (Drainage)',
     email: 'drainage@ghorahimun.demo',
     phone: '9827800005',
@@ -66,7 +66,7 @@ export const MOCK_PROFILES: Record<string, UserProfile> = {
     createdAt: '2026-01-01T10:00:00Z'
   },
   electrical_officer: {
-    id: 'p-electrical',
+    id: '00000000-0000-0000-0000-000000000007',
     name: 'Hari Prasad Devkota (Electrical)',
     email: 'electric@ghorahimun.demo',
     phone: '9837800006',
@@ -77,7 +77,7 @@ export const MOCK_PROFILES: Record<string, UserProfile> = {
     createdAt: '2026-01-01T10:00:00Z'
   },
   police_officer: {
-    id: 'p-police',
+    id: '00000000-0000-0000-0000-000000000008',
     name: 'Nepal Police Traffic Unit',
     email: 'police@ghorahimun.demo',
     phone: '9847800007',
@@ -88,7 +88,7 @@ export const MOCK_PROFILES: Record<string, UserProfile> = {
     createdAt: '2026-01-01T10:00:00Z'
   },
   safety_officer: {
-    id: 'p-safety',
+    id: '00000000-0000-0000-0000-000000000009',
     name: 'Nepal Police Security Unit',
     email: 'safety@ghorahimun.demo',
     phone: '9857800008',
@@ -99,7 +99,7 @@ export const MOCK_PROFILES: Record<string, UserProfile> = {
     createdAt: '2026-01-01T10:00:00Z'
   },
   fire_officer: {
-    id: 'p-fire',
+    id: '00000000-0000-0000-0000-000000000010',
     name: 'Ghorahi Fire Station Command',
     email: 'fire@ghorahimun.demo',
     phone: '9867800009',
@@ -130,7 +130,7 @@ export const MOCK_REPORTS: Report[] = [
     address: 'Highway intersection, Ghorahi-15, Dang',
     municipalityId: 'ghorahi',
     wardId: 15,
-    reporterId: 'p-citizen',
+    reporterId: '00000000-0000-0000-0000-000000000001',
     status: 'Assigned',
     priority: 'High',
     supportCount: 18,
@@ -169,7 +169,7 @@ export const MOCK_REPORTS: Report[] = [
     address: 'Vegetable Market, Ghorahi-3, Dang',
     municipalityId: 'ghorahi',
     wardId: 3,
-    reporterId: 'p-citizen',
+    reporterId: '00000000-0000-0000-0000-000000000001',
     status: 'Resolved',
     priority: 'Medium',
     supportCount: 5,
@@ -215,7 +215,7 @@ export const MOCK_REPORTS: Report[] = [
     address: 'Ghorahi Bazar Chowk, Ward 15',
     municipalityId: 'ghorahi',
     wardId: 15,
-    reporterId: 'p-citizen',
+    reporterId: '00000000-0000-0000-0000-000000000001',
     status: 'In_Progress',
     priority: 'Emergency',
     supportCount: 42,
@@ -250,7 +250,7 @@ export const MOCK_COMMENTS: Comment[] = [
   {
     id: 'c-1',
     reportId: 'r-1',
-    userId: 'p-admin',
+    userId: '00000000-0000-0000-0000-000000000002',
     userName: 'Ghorahi Municipality Admin',
     userRole: 'Admin',
     content: 'Report verified. Manual forwarding to Road & Infrastructure Division completed.',
@@ -260,7 +260,7 @@ export const MOCK_COMMENTS: Comment[] = [
   {
     id: 'c-2',
     reportId: 'r-1',
-    userId: 'p-citizen',
+    userId: '00000000-0000-0000-0000-000000000001',
     userName: 'Yogesh Pulami',
     userRole: 'Citizen',
     content: 'Thank you Admin. Please fix this soon, another motorcycle slipped here yesterday.',

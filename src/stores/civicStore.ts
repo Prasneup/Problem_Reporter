@@ -51,7 +51,7 @@ export const useCivicStore = create<CivicState>()(
       notifications: [
         {
           id: 'n-init',
-          userId: 'p-citizen',
+          userId: '00000000-0000-0000-0000-000000000001',
           title: 'Welcome to Ghorahi Smart City Portal',
           message: 'Submit reports on waste, road damage, lighting or emergencies directly to the municipal team.',
           type: 'info',
