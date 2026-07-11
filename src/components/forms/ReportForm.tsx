@@ -463,7 +463,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
 
       <button 
         type="submit" 
-        disabled={submitting || !coords || (imgUrl && !aiVerified) || (hasDuplicate && showDuplicateOverlay)} 
+        disabled={submitting || !coords || (imgUrl && !aiVerified)} 
         className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-transparent font-bold py-2.5 rounded-xl text-xs transition-colors shadow-sm text-white cursor-pointer"
       >
         {submitting ? 'Submitting Report...' : 'Submit Report'}
