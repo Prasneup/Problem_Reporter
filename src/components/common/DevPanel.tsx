@@ -50,7 +50,10 @@ export const DevPanel: React.FC = () => {
           value={getActiveUserKey()}
           onChange={(e) => {
             const profile = MOCK_PROFILES[e.target.value];
-            if (profile) setCurrentUser(profile);
+            if (profile) {
+              sessionStorage.setItem('mock_session_email', profile.email);
+              setCurrentUser(profile);
+            }
           }}
           className="bg-slate-50 border border-slate-200 text-[10px] rounded px-2.5 py-1 text-slate-700 font-bold focus:outline-none focus:border-blue-500 transition-colors"
         >
