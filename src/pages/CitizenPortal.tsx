@@ -1133,20 +1133,20 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                   placeholder="Suggestion Title (e.g. Upgrade Ward Park)" 
                   value={newTitle} 
                   onChange={e => setNewTitle(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold focus:outline-none focus:border-blue-500" 
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500" 
                   required
                 />
                 <textarea 
                   placeholder="Elaborate on how Ghorahi municipality can implement this idea..." 
                   value={newDesc} 
                   onChange={e => setNewDesc(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-lg p-3 text-xs font-semibold focus:outline-none focus:border-blue-500" 
+                  className="w-full bg-white border border-slate-200 rounded-lg p-3 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500" 
                   rows={2}
                   required
                 />
               </div>
               <div className="flex justify-between items-center">
-                <select value={newCat} onChange={e => setNewCat(e.target.value)} className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-650 focus:outline-none">
+                <select value={newCat} onChange={e => setNewCat(e.target.value)} className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
                   {['Sanitation', 'Road Infrastructure', 'Water Supply', 'Drainage', 'Electricity', 'Parks & Playgrounds', 'Public Safety'].map(c => (
                     <option key={c} value={c}>{c}</option>
                   ))}
@@ -1171,15 +1171,15 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                 <div key={s.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3.5 hover:border-slate-300 transition-colors">
                   <div className="flex justify-between items-start">
                     <div className="space-y-0.5">
-                      <span className="bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide">{s.category}</span>
-                      <h4 className="text-xs font-bold text-slate-800 mt-1">{s.title}</h4>
+                      <span className="bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide">{s.category || 'General'}</span>
+                      <h4 className="text-xs font-bold text-slate-800 mt-1">{s.title || 'Untitled'}</h4>
                     </div>
-                    <span className="text-[9px] text-slate-400 font-bold">{s.date}</span>
+                    <span className="text-[9px] text-slate-400 font-bold">{s.date || 'Just Now'}</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 font-bold leading-relaxed">{s.description}</p>
+                  <p className="text-[10px] text-slate-500 font-bold leading-relaxed">{s.description || ''}</p>
                   
                   <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-[9px] font-bold text-slate-400 select-none">
-                    <span>Proposed by: <strong className="text-slate-600">{s.author}</strong></span>
+                    <span>Proposed by: <strong className="text-slate-650">{s.author || 'Anonymous'}</strong></span>
                     
                     <div className="flex items-center gap-3">
                       <button 
@@ -1191,11 +1191,11 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                         }`}
                       >
                         <ThumbsUp className="w-3.5 h-3.5" />
-                        <span>{s.upvotes} Upvotes</span>
+                        <span>{s.upvotes || 0} Upvotes</span>
                       </button>
                       <span className="flex items-center gap-1.5 py-1 text-slate-500">
                         <MessageSquare className="w-3.5 h-3.5" />
-                        <span>{s.comments.length} Comments</span>
+                        <span>{(s.comments || []).length} Comments</span>
                       </span>
                     </div>
                   </div>
