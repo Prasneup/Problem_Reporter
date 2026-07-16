@@ -1,4 +1,3 @@
-import React from 'react';
 import { Shield, MapPin, Eye, Lock, FileText } from 'lucide-react';
 
 export const PrivacyPolicy = () => {

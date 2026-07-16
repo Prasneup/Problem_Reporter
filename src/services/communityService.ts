@@ -362,7 +362,7 @@ export const communityService = {
       // 4. Map profiles to leaderboard records
       const users: LeaderboardUser[] = (profiles || []).map(p => {
         const count = resolutionCounts[p.id] || 0;
-        const initials = p.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        const initials = p.name.split(' ').map((n: string) => n[0] || '').join('').toUpperCase().substring(0, 2);
         return {
           name: p.name,
           resolvedCount: count,
@@ -374,7 +374,7 @@ export const communityService = {
       // Insert/Ensure our current user is in the list with calculated points
       const hasMe = users.some(u => u.name.toLowerCase() === currentUserName.toLowerCase());
       if (!hasMe) {
-        const meInitials = currentUserName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        const meInitials = currentUserName.split(' ').map((n: string) => n[0] || '').join('').toUpperCase().substring(0, 2);
         users.push({
           name: currentUserName,
           resolvedCount: resolvedCount,
@@ -399,7 +399,7 @@ export const communityService = {
     } catch (err) {
       console.warn("communityService.fetchLeaderboard falling back to mock:", err);
       
-      const initials = currentUserName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+      const initials = currentUserName.split(' ').map((n: string) => n[0] || '').join('').toUpperCase().substring(0, 2);
       
       const mockList: LeaderboardUser[] = [
         { name: 'Ramesh Dahal', resolvedCount: 14, reputation: 280, avatar: 'RD' },
