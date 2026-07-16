@@ -21,6 +21,7 @@ export const DevPanel: React.FC = () => {
 
   const handleReset = () => {
     localStorage.removeItem('dang-smart-city-store');
+    localStorage.removeItem('dang-smart-city-suggestions');
     window.location.reload();
   };
 

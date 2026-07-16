@@ -1052,196 +1052,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
     );
   };
 
-  const CommunityView = () => {
-    const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-    const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
-    const [newTitle, setNewTitle] = useState('');
-    const [newDesc, setNewDesc] = useState('');
-    const [newCat, setNewCat] = useState('Sanitation');
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-      const loadCommunityData = async () => {
-        try {
-          setLoading(true);
-          const fetchedSuggestions = await communityService.fetchSuggestions(currentUser.id);
-          const fetchedLeaderboard = await communityService.fetchLeaderboard(currentUser.name, resolvedCount);
-          setSuggestions(fetchedSuggestions);
-          setLeaderboard(fetchedLeaderboard);
-        } catch (err) {
-          console.error("Failed to load community data:", err);
-        } finally {
-          setLoading(false);
-        }
-      };
-      loadCommunityData();
-    }, [currentUser, resolvedCount]);
-
-    const handleAddSuggestion = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!newTitle.trim() || !newDesc.trim()) return;
-      try {
-        const newSuggest = await communityService.createSuggestion(
-          newTitle,
-          newDesc,
-          newCat,
-          currentUser.name,
-          currentUser.id
-        );
-        setSuggestions(prev => [newSuggest, ...prev]);
-        setNewTitle('');
-        setNewDesc('');
-      } catch (err) {
-        console.error("Failed to post suggestion:", err);
-      }
-    };
-
-    const handleUpvoteSuggest = async (id: string) => {
-      const target = suggestions.find(s => s.id === id);
-      if (!target) return;
-      try {
-        const result = await communityService.toggleUpvote(id, currentUser.id, target.liked);
-        setSuggestions(prev => prev.map(s => {
-          if (s.id === id) {
-            return {
-              ...s,
-              upvotes: result.upvotes,
-              liked: result.liked
-            };
-          }
-          return s;
-        }));
-      } catch (err) {
-        console.error("Failed to upvote suggestion:", err);
-      }
-    };
-
-    return (
-      <div className="glass-panel p-6 space-y-6 font-sans select-none">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-5">
-            <div>
-              <h2 className="text-base font-bold text-slate-800">Community Suggestions Feed</h2>
-              <p className="text-[10px] text-slate-500 mt-0.5 font-bold">Collaborate on municipal ideas, share community suggestions, and support citizen-led improvement initiatives.</p>
-            </div>
-
-            <form onSubmit={handleAddSuggestion} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Submit Suggestion to Community</h3>
-              <div className="space-y-2">
-                <input 
-                  type="text" 
-                  placeholder="Suggestion Title (e.g. Upgrade Ward Park)" 
-                  value={newTitle} 
-                  onChange={e => setNewTitle(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500" 
-                  required
-                />
-                <textarea 
-                  placeholder="Elaborate on how Ghorahi municipality can implement this idea..." 
-                  value={newDesc} 
-                  onChange={e => setNewDesc(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-lg p-3 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500" 
-                  rows={2}
-                  required
-                />
-              </div>
-              <div className="flex justify-between items-center">
-                <select value={newCat} onChange={e => setNewCat(e.target.value)} className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
-                  {['Sanitation', 'Road Infrastructure', 'Water Supply', 'Drainage', 'Electricity', 'Parks & Playgrounds', 'Public Safety'].map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-1.5 px-4 rounded-xl cursor-pointer">
-                  Post Suggestion
-                </button>
-              </div>
-            </form>
-
-            <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
-              {loading ? (
-                <div className="py-10 text-center text-xs font-bold text-slate-400 animate-pulse">
-                  Loading community suggestions...
-                </div>
-              ) : suggestions.length === 0 ? (
-                <div className="py-10 text-center text-xs font-bold text-slate-400">
-                  No suggestions posted yet. Be the first to share an idea!
-                </div>
-              ) : (
-                suggestions.map((s) => (
-                <div key={s.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3.5 hover:border-slate-300 transition-colors">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-0.5">
-                      <span className="bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide">{s.category || 'General'}</span>
-                      <h4 className="text-xs font-bold text-slate-800 mt-1">{s.title || 'Untitled'}</h4>
-                    </div>
-                    <span className="text-[9px] text-slate-400 font-bold">{s.date || 'Just Now'}</span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 font-bold leading-relaxed">{s.description || ''}</p>
-                  
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-[9px] font-bold text-slate-400 select-none">
-                    <span>Proposed by: <strong className="text-slate-650">{s.author || 'Anonymous'}</strong></span>
-                    
-                    <div className="flex items-center gap-3">
-                      <button 
-                        onClick={() => handleUpvoteSuggest(s.id)}
-                        className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-colors cursor-pointer ${
-                          s.liked 
-                            ? 'bg-blue-50 border-blue-200 text-blue-600 font-extrabold' 
-                            : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
-                        }`}
-                      >
-                        <ThumbsUp className="w-3.5 h-3.5" />
-                        <span>{s.upvotes || 0} Upvotes</span>
-                      </button>
-                      <span className="flex items-center gap-1.5 py-1 text-slate-500">
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>{(s.comments || []).length} Comments</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )))}
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col self-start space-y-4">
-            <div>
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Reputation Leaderboard</h3>
-              <p className="text-[9px] text-slate-400 font-bold mt-0.5">Top contributors in Ghorahi. Earn reputation points by filing verified complaints and reviewing resolved services.</p>
-            </div>
-            
-            <div className="space-y-3.5 select-none pt-2">
-              {leaderboard.map((user, idx) => (
-                <div key={idx} className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${
-                  user.isMe 
-                    ? 'bg-blue-50/50 border-blue-200 ring-1 ring-blue-300' 
-                    : 'bg-slate-50/40 border-slate-100'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 text-xs font-extrabold text-slate-400 text-center font-mono">#{idx + 1}</div>
-                    <div className="w-7 h-7 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center text-[10px] font-extrabold text-slate-600">
-                      {user.avatar}
-                    </div>
-                    <div>
-                      <div className="text-[10.5px] font-extrabold text-slate-800 flex items-center gap-1">
-                        {user.name}
-                        {user.isMe && <span className="bg-blue-600 text-white text-[7px] px-1 rounded uppercase tracking-wider font-extrabold">You</span>}
-                      </div>
-                      <div className="text-[8.5px] font-bold text-slate-400 mt-0.5">{user.resolvedCount} Issues Resolved</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[11px] font-extrabold text-slate-750 font-mono">{user.reputation}</span>
-                    <span className="text-[7.5px] font-extrabold text-slate-400 block tracking-wide uppercase">Points</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  // CommunityView has been moved to a top-level component at the bottom of this file to prevent infinite HMR remount triggers.
 
   const ProfileView = () => {
     const [editMode, setEditMode] = useState(false);
@@ -2821,6 +2632,279 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
           onClose={() => setLightboxData(null)}
         />
       )}
+    </div>
+  );
+};
+
+// Top-level CommunityView component to prevent remounting and stuck state issues
+const CommunityView = () => {
+  const { currentUser, reports } = useCivicStore();
+  const myResolvedCount = (reports || []).filter(r => r.reporterId === currentUser.id && r.status === 'Resolved').length;
+
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+  const [newCat, setNewCat] = useState('Sanitation');
+  const [loading, setLoading] = useState(true);
+
+  const [expandedSuggestionId, setExpandedSuggestionId] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState('');
+
+  useEffect(() => {
+    const loadCommunityData = async () => {
+      try {
+        setLoading(true);
+        const fetchedSuggestions = await communityService.fetchSuggestions(currentUser.id);
+        const fetchedLeaderboard = await communityService.fetchLeaderboard(currentUser.name, myResolvedCount);
+        setSuggestions(fetchedSuggestions);
+        setLeaderboard(fetchedLeaderboard);
+      } catch (err) {
+        console.error("Failed to load community data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadCommunityData();
+  }, [currentUser.id, myResolvedCount]);
+
+  const handleAddSuggestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim() || !newDesc.trim()) return;
+    try {
+      const newSuggest = await communityService.createSuggestion(
+        newTitle,
+        newDesc,
+        newCat,
+        currentUser.name,
+        currentUser.id
+      );
+      setSuggestions(prev => [newSuggest, ...prev]);
+      setNewTitle('');
+      setNewDesc('');
+    } catch (err) {
+      console.error("Failed to post suggestion:", err);
+    }
+  };
+
+  const handleUpvoteSuggest = async (id: string) => {
+    const target = suggestions.find(s => s.id === id);
+    if (!target) return;
+    try {
+      const result = await communityService.toggleUpvote(id, currentUser.id, target.liked);
+      setSuggestions(prev => prev.map(s => {
+        if (s.id === id) {
+          return {
+            ...s,
+            upvotes: result.upvotes,
+            liked: result.liked
+          };
+        }
+        return s;
+      }));
+    } catch (err) {
+      console.error("Failed to upvote suggestion:", err);
+    }
+  };
+
+  return (
+    <div className="glass-panel p-6 space-y-6 font-sans select-none">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-5">
+          <div>
+            <h2 className="text-base font-bold text-slate-800">Community Suggestions Feed</h2>
+            <p className="text-[10px] text-slate-500 mt-0.5 font-bold">Collaborate on municipal ideas, share community suggestions, and support citizen-led improvement initiatives.</p>
+          </div>
+
+          <form onSubmit={handleAddSuggestion} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Submit Suggestion to Community</h3>
+            <div className="space-y-2">
+              <input 
+                type="text" 
+                placeholder="Suggestion Title (e.g. Upgrade Ward Park)" 
+                value={newTitle} 
+                onChange={e => setNewTitle(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500" 
+                required
+              />
+              <textarea 
+                placeholder="Elaborate on how Ghorahi municipality can implement this idea..." 
+                value={newDesc} 
+                onChange={e => setNewDesc(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-lg p-3 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500" 
+                rows={2}
+                required
+              />
+            </div>
+            <div className="flex justify-between items-center">
+              <select value={newCat} onChange={e => setNewCat(e.target.value)} className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
+                {['Sanitation', 'Road Infrastructure', 'Water Supply', 'Drainage', 'Electricity', 'Parks & Playgrounds', 'Public Safety'].map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-1.5 px-4 rounded-xl cursor-pointer">
+                Post Suggestion
+              </button>
+            </div>
+          </form>
+
+          <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
+            {loading ? (
+              <div className="py-10 text-center text-xs font-bold text-slate-400 animate-pulse">
+                Loading community suggestions...
+              </div>
+            ) : suggestions.length === 0 ? (
+              <div className="py-10 text-center text-xs font-bold text-slate-400">
+                No suggestions posted yet. Be the first to share an idea!
+              </div>
+            ) : (
+              suggestions.map((s) => (
+              <div key={s.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3.5 hover:border-slate-300 transition-colors animate-in fade-in duration-150">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-0.5">
+                    <span className="bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide">{s.category || 'General'}</span>
+                    <h4 className="text-xs font-bold text-slate-800 mt-1">{s.title || 'Untitled'}</h4>
+                  </div>
+                  <span className="text-[9px] text-slate-400 font-bold">{s.date || 'Just Now'}</span>
+                </div>
+                <p className="text-[10px] text-slate-500 font-bold leading-relaxed">{s.description || ''}</p>
+                
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-[9px] font-bold text-slate-400 select-none">
+                  <span>Proposed by: <strong className="text-slate-650">{s.author || 'Anonymous'}</strong></span>
+                  
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => handleUpvoteSuggest(s.id)}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-colors cursor-pointer ${
+                        s.liked 
+                          ? 'bg-blue-50 border-blue-200 text-blue-600 font-extrabold' 
+                          : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                      }`}
+                    >
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                      <span>{s.upvotes || 0} Upvotes</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => {
+                        if (expandedSuggestionId === s.id) {
+                          setExpandedSuggestionId(null);
+                        } else {
+                          setExpandedSuggestionId(s.id);
+                          setCommentText('');
+                        }
+                      }}
+                      className={`flex items-center gap-1.5 py-1 px-2 rounded-lg border transition-colors cursor-pointer ${
+                        expandedSuggestionId === s.id 
+                          ? 'bg-blue-50 border-blue-200 text-blue-600 font-extrabold' 
+                          : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                      }`}
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>{(s.comments || []).length} Comments</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Expandable Comments Panel */}
+                {expandedSuggestionId === s.id && (
+                  <div className="border-t border-slate-100 mt-3 pt-3.5 space-y-3.5 animate-in slide-in-from-top duration-200">
+                    {/* List comments */}
+                    <div className="space-y-2">
+                      {(s.comments || []).length === 0 ? (
+                        <div className="text-[9px] font-bold text-slate-400 italic pl-1">
+                          No comments yet. Start the conversation!
+                        </div>
+                      ) : (
+                        (s.comments || []).map((c) => (
+                          <div key={c.id} className="bg-slate-50 border border-slate-100 rounded-xl p-2.5 space-y-1">
+                            <div className="flex justify-between items-center text-[9px] font-bold">
+                              <span className="text-slate-700">{c.author}</span>
+                              <span className="text-slate-400 font-normal">{c.date}</span>
+                            </div>
+                            <p className="text-[9.5px] text-slate-650 font-semibold leading-relaxed pl-0.5">{c.content}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Reply Input Form */}
+                    <form 
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (!commentText.trim()) return;
+                        try {
+                          const newComment = await communityService.addComment(s.id, currentUser.name, commentText);
+                          setSuggestions(prev => prev.map(item => {
+                            if (item.id === s.id) {
+                              return { ...item, comments: [...(item.comments || []), newComment] };
+                            }
+                            return item;
+                          }));
+                          setCommentText('');
+                        } catch (err) {
+                          console.error("Failed to add comment:", err);
+                        }
+                      }}
+                      className="flex gap-2"
+                    >
+                      <input 
+                        type="text" 
+                        placeholder="Type a comment or reply..." 
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-[10px] font-semibold text-slate-800 focus:outline-none focus:border-blue-500 placeholder-slate-400"
+                        required
+                      />
+                      <button 
+                        type="submit" 
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[9px] px-3.5 py-1.5 rounded-lg cursor-pointer"
+                      >
+                        Reply
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </div>
+            )))}
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col self-start space-y-4">
+          <div>
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Reputation Leaderboard</h3>
+            <p className="text-[9px] text-slate-400 font-bold mt-0.5">Top contributors in Ghorahi. Earn reputation points by filing verified complaints and reviewing resolved services.</p>
+          </div>
+          
+          <div className="space-y-3.5 select-none pt-2">
+            {leaderboard.map((user, idx) => (
+              <div key={idx} className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${
+                user.isMe 
+                  ? 'bg-blue-50/50 border-blue-200 ring-1 ring-blue-300' 
+                  : 'bg-slate-50/40 border-slate-100'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-5 text-xs font-extrabold text-slate-400 text-center font-mono">#{idx + 1}</div>
+                  <div className="w-7 h-7 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center text-[10px] font-extrabold text-slate-600">
+                    {user.avatar}
+                  </div>
+                  <div>
+                    <div className="text-[10.5px] font-extrabold text-slate-800 flex items-center gap-1">
+                      {user.name}
+                      {user.isMe && <span className="bg-blue-600 text-white text-[7px] px-1 rounded uppercase tracking-wider font-extrabold">You</span>}
+                    </div>
+                    <div className="text-[8.5px] font-bold text-slate-400 mt-0.5">{user.resolvedCount} Issues Resolved</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[11px] font-extrabold text-slate-750 font-mono">{user.reputation}</span>
+                  <span className="text-[7.5px] font-extrabold text-slate-400 block tracking-wide uppercase">Points</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,5 +1,12 @@
 import { supabase } from '../lib/supabase';
 
+export interface Comment {
+  id: string;
+  author: string;
+  content: string;
+  date: string;
+}
+
 export interface Suggestion {
   id: string;
   title: string;
@@ -10,7 +17,7 @@ export interface Suggestion {
   authorId?: string;
   date: string;
   liked: boolean;
-  comments: string[];
+  comments: Comment[];
 }
 
 export interface LeaderboardUser {
@@ -26,9 +33,44 @@ const LOCAL_STORAGE_KEY = 'dang-smart-city-suggestions';
 const LIKED_KEY_PREFIX = 'dang-smart-city-liked-';
 
 const MOCK_SUGGESTIONS: Suggestion[] = [
-  { id: '1', title: 'Install Community Trash Bin', description: 'Request to install a communal waste bin near the main square of Ward 15 to prevent roadside garbage dumping.', category: 'Sanitation', upvotes: 18, author: 'Sunita Bista', date: 'Jul 8, 2026', liked: false, comments: ['Great idea, need this urgently!', 'Let ward office coordinate this.'] },
-  { id: '2', title: 'Street Light Timing Adjustment', description: 'Adjust the automated timing for street lights in Ward 10. They turn on too late during the summer season.', category: 'Electricity', upvotes: 12, author: 'Hari Poudel', date: 'Jul 9, 2026', liked: false, comments: [] },
-  { id: '3', title: 'Clean Water Station in Ghorahi Park', description: 'Introduce a solar-powered public drinking water station in the central municipality park.', category: 'Water Supply', upvotes: 24, author: 'Maya Shrestha', date: 'Jul 10, 2026', liked: false, comments: ['This would benefit so many visitors.'] }
+  { 
+    id: '1', 
+    title: 'Install Community Trash Bin', 
+    description: 'Request to install a communal waste bin near the main square of Ward 15 to prevent roadside garbage dumping.', 
+    category: 'Sanitation', 
+    upvotes: 18, 
+    author: 'Sunita Bista', 
+    date: 'Jul 8, 2026', 
+    liked: false, 
+    comments: [
+      { id: 'c1', author: 'Ramesh Dahal', content: 'Great idea, need this urgently!', date: 'Jul 8, 2026' },
+      { id: 'c2', author: 'Sunita Bista', content: 'Let ward office coordinate this.', date: 'Jul 8, 2026' }
+    ] 
+  },
+  { 
+    id: '2', 
+    title: 'Street Light Timing Adjustment', 
+    description: 'Adjust the automated timing for street lights in Ward 10. They turn on too late during the summer season.', 
+    category: 'Electricity', 
+    upvotes: 12, 
+    author: 'Hari Poudel', 
+    date: 'Jul 9, 2026', 
+    liked: false, 
+    comments: [] 
+  },
+  { 
+    id: '3', 
+    title: 'Clean Water Station in Ghorahi Park', 
+    description: 'Introduce a solar-powered public drinking water station in the central municipality park.', 
+    category: 'Water Supply', 
+    upvotes: 24, 
+    author: 'Maya Shrestha', 
+    date: 'Jul 10, 2026', 
+    liked: false, 
+    comments: [
+      { id: 'c3', author: 'Hari Poudel', content: 'This would benefit so many visitors.', date: 'Jul 10, 2026' }
+    ] 
+  }
 ];
 
 function getLocalSuggestions(): Suggestion[] {
@@ -54,11 +96,33 @@ export const communityService = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // 2. Fetch all comments
+      const { data: dbComments } = await supabase
+        .from('community_comments')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      const commentMap: Record<string, Comment[]> = {};
+      if (dbComments) {
+        dbComments.forEach(c => {
+          if (!commentMap[c.suggestion_id]) {
+            commentMap[c.suggestion_id] = [];
+          }
+          commentMap[c.suggestion_id].push({
+            id: c.id,
+            author: c.author_name,
+            content: c.content,
+            date: new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          });
+        });
+      }
+
       if (!dbSuggestions || dbSuggestions.length === 0) {
         return getLocalSuggestions();
       }
 
-      // 2. Fetch upvotes for current user to set liked status
+      // 3. Fetch upvotes for current user to set liked status
       let likedIds: string[] = [];
       if (userId) {
         const { data: votes } = await supabase
@@ -80,7 +144,7 @@ export const communityService = {
         authorId: s.author_id,
         date: new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         liked: likedIds.includes(s.id),
-        comments: []
+        comments: commentMap[s.id] || []
       }));
     } catch (err) {
       console.warn("communityService.fetchSuggestions falling back to local storage:", err);
@@ -224,6 +288,46 @@ export const communityService = {
       });
       saveLocalSuggestions(updatedList);
       return { upvotes: newCount, liked: !hasLiked };
+    }
+  },
+
+  async addComment(suggestionId: string, authorName: string, content: string): Promise<Comment> {
+    try {
+      const { data, error } = await supabase
+        .from('community_comments')
+        .insert({
+          suggestion_id: suggestionId,
+          author_name: authorName,
+          content
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        id: data.id,
+        author: data.author_name,
+        content: data.content,
+        date: 'Just Now'
+      };
+    } catch (err) {
+      console.warn("communityService.addComment falling back to local storage:", err);
+      const localList = getLocalSuggestions();
+      const newComment: Comment = {
+        id: Date.now().toString(),
+        author: authorName,
+        content,
+        date: 'Just Now'
+      };
+      const updatedList = localList.map(s => {
+        if (s.id === suggestionId) {
+          return { ...s, comments: [...(s.comments || []), newComment] };
+        }
+        return s;
+      });
+      saveLocalSuggestions(updatedList);
+      return newComment;
     }
   },
 
