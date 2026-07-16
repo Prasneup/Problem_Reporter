@@ -17,6 +17,7 @@ import {
 import { MediaLightbox } from '../components/common/MediaLightbox';
 import ghorahiBanner from '../assets/ghorahi_banner.jpg';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, AreaChart, Area, CartesianGrid } from 'recharts';
+import { communityService, Suggestion, LeaderboardUser } from '../services/communityService';
 
 
 interface CitizenPortalProps {
@@ -1051,54 +1052,68 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
   };
 
   const CommunityView = () => {
-    const [suggestions, setSuggestions] = useState([
-      { id: '1', title: 'Install Community Trash Bin', description: 'Request to install a communal waste bin near the main square of Ward 15 to prevent roadside garbage dumping.', category: 'Sanitation', upvotes: 18, author: 'Sunita Bista', date: 'Jul 8, 2026', liked: false, comments: ['Great idea, need this urgently!', 'Let ward office coordinate this.'] },
-      { id: '2', title: 'Street Light Timing Adjustment', description: 'Adjust the automated timing for street lights in Ward 10. They turn on too late during the summer season.', category: 'Electricity', upvotes: 12, author: 'Hari Poudel', date: 'Jul 9, 2026', liked: false, comments: [] },
-      { id: '3', title: 'Clean Water Station in Ghorahi Park', description: 'Introduce a solar-powered public drinking water station in the central municipality park.', category: 'Water Supply', upvotes: 24, author: 'Maya Shrestha', date: 'Jul 10, 2026', liked: false, comments: ['This would benefit so many visitors.'] }
-    ]);
+    const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+    const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
     const [newTitle, setNewTitle] = useState('');
     const [newDesc, setNewDesc] = useState('');
     const [newCat, setNewCat] = useState('Sanitation');
+    const [loading, setLoading] = useState(true);
 
-    const handleAddSuggestion = (e: React.FormEvent) => {
+    useEffect(() => {
+      const loadCommunityData = async () => {
+        try {
+          setLoading(true);
+          const fetchedSuggestions = await communityService.fetchSuggestions(currentUser.id);
+          const fetchedLeaderboard = await communityService.fetchLeaderboard(currentUser.name, resolvedCount);
+          setSuggestions(fetchedSuggestions);
+          setLeaderboard(fetchedLeaderboard);
+        } catch (err) {
+          console.error("Failed to load community data:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadCommunityData();
+    }, [currentUser, resolvedCount]);
+
+    const handleAddSuggestion = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!newTitle.trim() || !newDesc.trim()) return;
-      const newSuggest = {
-        id: Date.now().toString(),
-        title: newTitle,
-        description: newDesc,
-        category: newCat,
-        upvotes: 1,
-        author: currentUser.name,
-        date: 'Just Now',
-        liked: true,
-        comments: []
-      };
-      setSuggestions([newSuggest, ...suggestions]);
-      setNewTitle('');
-      setNewDesc('');
+      try {
+        const newSuggest = await communityService.createSuggestion(
+          newTitle,
+          newDesc,
+          newCat,
+          currentUser.name,
+          currentUser.id
+        );
+        setSuggestions(prev => [newSuggest, ...prev]);
+        setNewTitle('');
+        setNewDesc('');
+      } catch (err) {
+        console.error("Failed to post suggestion:", err);
+      }
     };
 
-    const handleUpvoteSuggest = (id: string) => {
-      setSuggestions(prev => prev.map(s => {
-        if (s.id === id) {
-          return {
-            ...s,
-            upvotes: s.liked ? s.upvotes - 1 : s.upvotes + 1,
-            liked: !s.liked
-          };
-        }
-        return s;
-      }));
+    const handleUpvoteSuggest = async (id: string) => {
+      const target = suggestions.find(s => s.id === id);
+      if (!target) return;
+      try {
+        const result = await communityService.toggleUpvote(id, currentUser.id, target.liked);
+        setSuggestions(prev => prev.map(s => {
+          if (s.id === id) {
+            return {
+              ...s,
+              upvotes: result.upvotes,
+              liked: result.liked
+            };
+          }
+          return s;
+        }));
+      } catch (err) {
+        console.error("Failed to upvote suggestion:", err);
+      }
     };
-
-    const leaderboard = [
-      { name: 'Ramesh Dahal', resolvedCount: 14, reputation: 280, rank: 1, avatar: 'RD' },
-      { name: 'Sunita Bista', resolvedCount: 11, reputation: 220, rank: 2, avatar: 'SB' },
-      { name: currentUser.name, resolvedCount: resolvedCount, reputation: resolvedCount * 50 + (citizenReports.length * 10) + 20, rank: 3, avatar: 'YP', isMe: true },
-      { name: 'Hari Poudel', resolvedCount: 4, reputation: 95, rank: 4, avatar: 'HP' },
-      { name: 'Maya Shrestha', resolvedCount: 2, reputation: 60, rank: 5, avatar: 'MS' }
-    ].sort((a, b) => b.reputation - a.reputation);
 
     return (
       <div className="glass-panel p-6 space-y-6 font-sans select-none">
@@ -1142,7 +1157,16 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
             </form>
 
             <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
-              {suggestions.map((s) => (
+              {loading ? (
+                <div className="py-10 text-center text-xs font-bold text-slate-400 animate-pulse">
+                  Loading community suggestions...
+                </div>
+              ) : suggestions.length === 0 ? (
+                <div className="py-10 text-center text-xs font-bold text-slate-400">
+                  No suggestions posted yet. Be the first to share an idea!
+                </div>
+              ) : (
+                suggestions.map((s) => (
                 <div key={s.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3.5 hover:border-slate-300 transition-colors">
                   <div className="flex justify-between items-start">
                     <div className="space-y-0.5">
@@ -1175,7 +1199,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({ activeView, setCur
                     </div>
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
           </div>
 
