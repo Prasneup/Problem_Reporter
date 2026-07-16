@@ -17,7 +17,8 @@ import {
 import { MediaLightbox } from '../components/common/MediaLightbox';
 import ghorahiBanner from '../assets/ghorahi_banner.jpg';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, AreaChart, Area, CartesianGrid } from 'recharts';
-import { communityService, Suggestion, LeaderboardUser } from '../services/communityService';
+import { communityService } from '../services/communityService';
+import type { Suggestion, LeaderboardUser } from '../services/communityService';
 
 
 interface CitizenPortalProps {
