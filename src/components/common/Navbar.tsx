@@ -5,9 +5,14 @@ import { Bell, Globe, ChevronDown, Search } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const { t, language, setLanguage } = useTranslation();
-  const { currentUser, notifications, dismissNotification, signOut } = useCivicStore();
+  const { currentUser, notifications, dismissNotification, signOut, searchQuery, setSearchQuery } = useCivicStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [searchVal, setSearchVal] = useState(searchQuery);
+
+  React.useEffect(() => {
+    setSearchVal(searchQuery);
+  }, [searchQuery]);
 
   const userNotifications = notifications.filter(n => n.userId === currentUser.id);
   const activeNotifications = userNotifications.filter(n => !n.isRead);
@@ -53,6 +58,13 @@ export const Navbar: React.FC = () => {
         <input
           type="text"
           placeholder="Search issues, reports, locations..."
+          value={searchVal}
+          onChange={e => setSearchVal(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              setSearchQuery(searchVal.trim());
+            }
+          }}
           className="w-full bg-slate-100/70 border border-slate-200 rounded-lg py-1.5 pl-9 pr-3.5 text-[11px] text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all"
         />
       </div>

@@ -15,6 +15,7 @@ interface CivicState {
   offlineQueue: Report[];
   isOnline: boolean;
   userLikes: string[];
+  searchQuery: string;
 
   // Actions
   setLanguage: (lang: 'en' | 'ne') => void;
@@ -23,6 +24,7 @@ interface CivicState {
   setOnlineStatus: (status: boolean) => void;
   loadInitialData: () => Promise<void>;
   signOut: () => Promise<void>;
+  setSearchQuery: (query: string) => void;
 
   submitReport: (report: Omit<Report, 'id' | 'reporterId' | 'status' | 'priority' | 'supportCount' | 'duplicateCount' | 'createdAt' | 'updatedAt' | 'images' | 'videos'> & { imageUrls?: string[]; videoUrl?: string; aiAnalysis?: any }) => Promise<void>;
   supportReport: (reportId: string) => Promise<void>;
@@ -62,8 +64,10 @@ export const useCivicStore = create<CivicState>()(
       offlineQueue: [],
       isOnline: true,
       userLikes: [],
+      searchQuery: '',
 
       setLanguage: (language) => set({ language }),
+      setSearchQuery: (searchQuery) => set({ searchQuery }),
 
       setUserRole: (role) => {
         // Find profile with matching role

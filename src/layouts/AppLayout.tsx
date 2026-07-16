@@ -21,9 +21,10 @@ import ElectricalOfficerPortal from '../pages/ElectricalOfficerPortal';
 import TrafficPolicePortal from '../pages/TrafficPolicePortal';
 import NepalPolicePortal from '../pages/NepalPolicePortal';
 import FireOfficerPortal from '../pages/FireOfficerPortal';
+import { SearchResultsView } from '../components/common/SearchResultsView';
 
 export const AppLayout: React.FC = () => {
-  const { currentUser, setCurrentUser } = useCivicStore();
+  const { currentUser, setCurrentUser, searchQuery, setSearchQuery } = useCivicStore();
   const role = currentUser.role;
   const navigate = useNavigate();
 
@@ -120,6 +121,13 @@ export const AppLayout: React.FC = () => {
     }
   };
 
+  const renderContent = () => {
+    if (searchQuery) {
+      return <SearchResultsView query={searchQuery} onClose={() => setSearchQuery('')} />;
+    }
+    return renderActiveTab();
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-blue-600/30">
       <Navbar />
@@ -127,7 +135,7 @@ export const AppLayout: React.FC = () => {
         <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} />
         <main className="flex-1 ml-64 p-6 pb-24 overflow-y-auto">
           <div className="max-w-7xl mx-auto space-y-6">
-            {renderActiveTab()}
+            {renderContent()}
           </div>
         </main>
       </div>
