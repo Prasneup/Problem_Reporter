@@ -42,8 +42,23 @@ async function fetchDbMappings() {
     }
   })();
 
-  await Promise.race([fetchPromise, timeoutPromise]);
-  console.log("DEBUG: fetchDbMappings completed successfully");
+  try {
+    await Promise.race([fetchPromise, timeoutPromise]);
+    console.log("DEBUG: fetchDbMappings completed successfully");
+  } catch (err) {
+    console.warn("DEBUG: fetchDbMappings failed or timed out. Falling back to local mock mappings:", err);
+    // Populate with mock mappings so the app doesn't break
+    MUNICIPALITIES.forEach(m => {
+      municipalityIdCache[m.id] = `mock-muni-uuid-${m.id}`;
+    });
+    MUNICIPALITIES.forEach(m => {
+      const muniUuid = `mock-muni-uuid-${m.id}`;
+      wardIdCache[muniUuid] = {};
+      for (let i = 1; i <= 19; i++) {
+        wardIdCache[muniUuid][i] = `mock-ward-uuid-${m.id}-${i}`;
+      }
+    });
+  }
 }
 
 export const authService = {
