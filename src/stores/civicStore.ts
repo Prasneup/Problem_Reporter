@@ -83,6 +83,7 @@ export const useCivicStore = create<CivicState>()(
 
       signOut: async () => {
         try {
+          sessionStorage.removeItem('mock_session_email');
           const { supabase } = await import('../lib/supabase');
           await supabase.auth.signOut();
         } catch (err) {
@@ -95,9 +96,19 @@ export const useCivicStore = create<CivicState>()(
         if (!get().isOnline) return;
         try {
           const { default: reportService } = await import('../services/reportService');
-          const reports = await reportService.fetchReports();
-          const budgets = await reportService.fetchBudgets();
-          const comments = await reportService.fetchComments();
+          
+          const withTimeout = <T>(promise: Promise<T>): Promise<T> => {
+            return Promise.race([
+              promise,
+              new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('Timeout fetching data')), 4000)
+              )
+            ]);
+          };
+
+          const reports = await withTimeout(reportService.fetchReports());
+          const budgets = await withTimeout(reportService.fetchBudgets());
+          const comments = await withTimeout(reportService.fetchComments());
           if (reports && reports.length > 0) {
             const currentReports = get().reports;
             const merged = reports.map(fetched => {

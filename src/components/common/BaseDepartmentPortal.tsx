@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { useCivicStore } from '../stores/civicStore';
-import type { PriorityLevel, ReportStatus } from '../types';
+import { useCivicStore } from '../../stores/civicStore';
+import type { PriorityLevel, ReportStatus } from '../../types';
 import { 
   Briefcase, CheckCircle, Clock, FileText, Send, 
   MapPin, Check
 } from 'lucide-react';
 
-export const DepartmentPortal: React.FC = () => {
+interface BaseDepartmentPortalProps {
+  departmentName: string;
+}
+
+export const BaseDepartmentPortal: React.FC<BaseDepartmentPortalProps> = ({ departmentName }) => {
   const { reports, currentUser, resolveReportByDepartment, updateReportStatus } = useCivicStore();
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
@@ -18,8 +22,8 @@ export const DepartmentPortal: React.FC = () => {
 
   const selectedReport = reports.find(r => r.id === selectedReportId);
 
-  // Filter reports belonging strictly to this department officer's Mahashakha
-  const deptReports = reports.filter(r => r.assignedDepartment === currentUser.department);
+  // Filter reports belonging strictly to this department
+  const deptReports = reports.filter(r => r.assignedDepartment === departmentName);
 
   const assignedCount = deptReports.filter(r => r.status === 'Assigned').length;
   const progressCount = deptReports.filter(r => r.status === 'In_Progress').length;
@@ -84,7 +88,9 @@ export const DepartmentPortal: React.FC = () => {
             <Briefcase className="w-6 h-6 text-blue-600" />
             <span>Mahashakha Workspace Portal</span>
           </h2>
-          <p className="text-xs text-slate-500 font-semibold mt-1">Logged in: <span className="font-extrabold text-blue-600">{currentUser.name}</span> | Department: <span className="font-extrabold text-slate-800">{currentUser.department || 'Not Specified'}</span></p>
+          <p className="text-xs text-slate-500 font-semibold mt-1">
+            Logged in: <span className="font-extrabold text-blue-600">{currentUser.name}</span> | Department: <span className="font-extrabold text-slate-800">{departmentName}</span>
+          </p>
         </div>
         <div className="text-[10px] bg-slate-50 border border-slate-200 text-slate-500 px-3 py-1.5 rounded-lg font-mono font-bold">
           OFFICER ID: {currentUser.id.toUpperCase()}
@@ -222,7 +228,7 @@ export const DepartmentPortal: React.FC = () => {
                 <select 
                   value={targetStatus} 
                   onChange={(e) => setTargetStatus(e.target.value as ReportStatus)} 
-                  className="w-full bg-slate-50 border border-slate-255 rounded-xl p-2.5 text-xs text-slate-700 font-bold focus:bg-white focus:outline-none"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-700 font-bold focus:bg-white focus:outline-none"
                 >
                   {['In_Progress', 'Resolved'].map(s => (
                     <option key={s} value={s}>{s.replace('_', ' ')}</option>
@@ -284,4 +290,4 @@ export const DepartmentPortal: React.FC = () => {
   );
 };
 
-export default DepartmentPortal;
+export default BaseDepartmentPortal;

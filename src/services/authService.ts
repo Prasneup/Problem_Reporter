@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import type { UserProfile, UserRole } from '../types';
 import { MUNICIPALITIES } from '../constants/municipalities';
+import { MOCK_PROFILES } from '../stores/mockData';
 
 // Caches for DB mappings: name -> id
 const municipalityIdCache: Record<string, string> = {};
@@ -9,30 +10,39 @@ let mappingPromise: Promise<void> | null = null;
 
 async function fetchDbMappings() {
   console.log("DEBUG: fetchDbMappings started");
-  const { data: munis, error: muniError } = await supabase.from('municipalities').select('id, name');
-  if (muniError) {
-    console.error("DEBUG: fetchDbMappings municipalities query error:", muniError);
-  }
-  if (munis) {
-    munis.forEach(m => {
-      // Find constant key (e.g. "ghorahi" from "Ghorahi Sub-Metropolitan City")
-      const matched = MUNICIPALITIES.find(item => item.name === m.name);
-      if (matched) municipalityIdCache[matched.id] = m.id;
-    });
-  }
+  
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Database mapping request timed out')), 4000)
+  );
 
-  const { data: wards, error: wardError } = await supabase.from('wards').select('id, municipality_id, ward_number');
-  if (wardError) {
-    console.error("DEBUG: fetchDbMappings wards query error:", wardError);
-  }
-  if (wards) {
-    wards.forEach(w => {
-      if (!wardIdCache[w.municipality_id]) {
-        wardIdCache[w.municipality_id] = {};
-      }
-      wardIdCache[w.municipality_id][w.ward_number] = w.id;
-    });
-  }
+  const fetchPromise = (async () => {
+    const { data: munis, error: muniError } = await supabase.from('municipalities').select('id, name');
+    if (muniError) {
+      console.error("DEBUG: fetchDbMappings municipalities query error:", muniError);
+    }
+    if (munis) {
+      munis.forEach(m => {
+        // Find constant key (e.g. "ghorahi" from "Ghorahi Sub-Metropolitan City")
+        const matched = MUNICIPALITIES.find(item => item.name === m.name);
+        if (matched) municipalityIdCache[matched.id] = m.id;
+      });
+    }
+
+    const { data: wards, error: wardError } = await supabase.from('wards').select('id, municipality_id, ward_number');
+    if (wardError) {
+      console.error("DEBUG: fetchDbMappings wards query error:", wardError);
+    }
+    if (wards) {
+      wards.forEach(w => {
+        if (!wardIdCache[w.municipality_id]) {
+          wardIdCache[w.municipality_id] = {};
+        }
+        wardIdCache[w.municipality_id][w.ward_number] = w.id;
+      });
+    }
+  })();
+
+  await Promise.race([fetchPromise, timeoutPromise]);
   console.log("DEBUG: fetchDbMappings completed successfully");
 }
 
@@ -190,6 +200,19 @@ export const authService = {
 
   async signIn(email: string, password: string): Promise<UserProfile> {
     console.log("DEBUG: signIn started for:", email);
+
+    // Check if it's a mock user for sandbox/offline bypass
+    const mockKey = Object.keys(MOCK_PROFILES).find(
+      (key) => MOCK_PROFILES[key].email.toLowerCase() === email.toLowerCase()
+    );
+    if (mockKey) {
+      console.log("DEBUG: Mock user bypass triggered for:", email);
+      sessionStorage.setItem('mock_session_email', email);
+      // Wait 500ms to simulate API latency
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return MOCK_PROFILES[mockKey];
+    }
+
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -284,6 +307,7 @@ export const authService = {
   },
 
   async signOut(): Promise<void> {
+    sessionStorage.removeItem('mock_session_email');
     await supabase.auth.signOut();
   }
 };

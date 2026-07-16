@@ -40,21 +40,30 @@ function App() {
 
     // Initial check
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        try {
-          const profile = await authService.getProfile(session.user.id);
-          // Align sandbox profile ID with real Supabase UUID to prevent filtering mismatches
-          MOCK_PROFILES.citizen.id = session.user.id;
-          MOCK_PROFILES.citizen.name = profile.name;
-          MOCK_PROFILES.citizen.email = profile.email;
-          MOCK_PROFILES.citizen.phone = profile.phone;
+      try {
+        const getSessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) =>
+          setTimeout(() => resolve({ data: { session: null } }), 4000)
+        );
+        const { data: { session } } = await Promise.race([getSessionPromise, timeoutPromise]);
 
-          setCurrentUser(profile);
-          loadInitialData();
-        } catch (err) {
-          console.error('Initial session profile load failed:', err);
+        if (session?.user) {
+          try {
+            const profile = await authService.getProfile(session.user.id);
+            // Align sandbox profile ID with real Supabase UUID to prevent filtering mismatches
+            MOCK_PROFILES.citizen.id = session.user.id;
+            MOCK_PROFILES.citizen.name = profile.name;
+            MOCK_PROFILES.citizen.email = profile.email;
+            MOCK_PROFILES.citizen.phone = profile.phone;
+
+            setCurrentUser(profile);
+            loadInitialData();
+          } catch (err) {
+            console.error('Initial session profile load failed:', err);
+          }
         }
+      } catch (err) {
+        console.error('Initial checkSession failed:', err);
       }
     };
     checkSession();

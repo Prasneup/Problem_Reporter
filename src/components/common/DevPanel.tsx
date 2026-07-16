@@ -11,12 +11,12 @@ export const DevPanel: React.FC = () => {
     { key: 'admin', label: `Admin (${currentUser.role === 'Admin' ? currentUser.name : 'Ghorahi Admin'})` },
     { key: 'sanitation_officer', label: `Sanitation Officer (${currentUser.department === 'Sanitation / Waste Management Mahashakha' ? currentUser.name : 'Ramesh Chaudhary'})` },
     { key: 'roads_officer', label: `Roads Officer (${currentUser.department === 'Road & Infrastructure Division' ? currentUser.name : 'Binod Bhandari'})` },
-    { key: 'water_officer', label: `Water Officer (${currentUser.department === 'Water Supply & Irrigation Division' ? currentUser.name : 'Krishna Raj Oli'})` },
-    { key: 'drainage_officer', label: `Drainage Officer (${currentUser.department === 'Sewerage & Drainage Division' ? currentUser.name : 'Sita Dahal'})` },
-    { key: 'electrical_officer', label: `Electrical Officer (${currentUser.department === 'Street Lighting & Energy Division' ? currentUser.name : 'Madan Shrestha'})` },
-    { key: 'police_officer', label: `Traffic Police Officer (${currentUser.department === 'Traffic Police Division' ? currentUser.name : 'Inspector Thapa'})` },
-    { key: 'safety_officer', label: `Nepal Police Officer (${currentUser.department === 'Nepal Police (Emergency)' ? currentUser.name : 'DSP KC'})` },
-    { key: 'fire_officer', label: `Fire Officer (${currentUser.department === 'Fire Emergency Services' ? currentUser.name : 'Fire Chief Basnet'})` }
+    { key: 'water_officer', label: `Water Officer (${currentUser.department === 'Water Supply Department' ? currentUser.name : 'Krishna Raj Oli'})` },
+    { key: 'drainage_officer', label: `Drainage Officer (${currentUser.department === 'Drainage Department' ? currentUser.name : 'Sita Dahal'})` },
+    { key: 'electrical_officer', label: `Electrical Officer (${currentUser.department === 'Electrical Department' ? currentUser.name : 'Madan Shrestha'})` },
+    { key: 'police_officer', label: `Traffic Police Officer (${currentUser.department === 'Nepal Police / Traffic Police' ? currentUser.name : 'Inspector Thapa'})` },
+    { key: 'safety_officer', label: `Nepal Police Officer (${currentUser.department === 'Nepal Police' ? currentUser.name : 'DSP KC'})` },
+    { key: 'fire_officer', label: `Fire Officer (${currentUser.department === 'Fire Response Department' ? currentUser.name : 'Fire Chief Basnet'})` }
   ];
 
   const handleReset = () => {
